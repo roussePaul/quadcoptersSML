@@ -311,7 +311,7 @@ class quad_controller():
                 # in case Qs is not defined yet
                 try: 
                     # close mocap connection
-                    self.Qs._stop_measurement()
+                    # self.Qs._stop_measurement()
                     del self.Qs
 
                     self.flagMOCAP_On = False
