@@ -1,6 +1,6 @@
 <launch>
 
-  <group ns="Iris1">
+  <!-- group ns="Iris1" -->
     
     <!-- Controller Node -->
     <node pkg="quad_control" name="controller_Iris1" type="cycle_quad_control_mavros.py"/>
@@ -34,6 +34,6 @@
     <param name="MAX_ANGLE_DEG" value="45.0"/> 
     <param name="MAX_PSI_SPEED_Deg" value="200.0"/>    
 
-  </group>
+  <!-- /group -->
 
 </launch>
