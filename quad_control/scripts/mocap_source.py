@@ -11,7 +11,8 @@ class Mocap(object):
     def __init__(self, host=None, port=None, info=0):
         #set IP and PORT of the Qtm PC
         if host is None:
-            host = 'sml-qualisys.ddns.net'
+            # host = 'sml-qualisys.ddns.net'
+            host = '192.168.1.146'
         if port is None:
             port = 22224
         self.host = host

@@ -52,11 +52,6 @@ The `--recursive` option makes sure that the mavros packages are also downloaded
 If you have received this project as an archive, copy the relevant subfolders (currently `quad_control`, `gui` and possibly `mavros`) into the `src` folder.
 If mavros is not included, create a folder and get the files from `https://github.com/mavlink/mavros`.
 
-Make sure that the file `apm2.launch` in `mavros/launch` contains the correct path to the interface of the quadcopter as `fcu_url`.
-In our case the relevant line has to look like this:
-~~~~
-<arg name="fcu_url" default="/dev/ttyUSB0:57600" />
-~~~~
 You should only have one mavros installation in your ROS path, i.e. you should not have mavros installed in another workspace or from the Ubuntu repositories (the mavros version that is currently available there is too old).
 
 To make sure that you mavros can access your USB port, you might need to add your user to the group `dialout` by executing `sudo usermod -a -G dialout $USER`.
@@ -87,12 +82,7 @@ rqt --standalone  tabbedGUI --args Iris1/
 If you want to connect to an actual quadcopter, run the following three blocks, each in his own terminal window in the workspace root:
 ~~~~
 source ./devel/setup.bash
-roslaunch mavros apm2.launch
-~~~~
-,
-~~~~
-source ./devel/setup.bash
-roslaunch quad_control iris1_mavros.launch
+roslaunch quad_control single_quad_mavros.launch
 ~~~~
 and 
 ~~~~
