@@ -32,7 +32,7 @@ The installation of rosinstall (package `python-rosinstall`) is not required.
 
 ## Setup Workspace
 
-(for more detailed instructions see the [official ROS tutorial](http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment)).
+(For more detailed instructions see the [official ROS tutorial](http://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment).)
 Create a workspace folder and make sure it contains a folder named `src`.
 In this `src` folder run `catkin_init_workspace` and make sure this directory is in the `ROS_PACKAGE_PATH` variable.
 You can check this with `echo $ROS_PACKAGE_PATH`.
@@ -41,6 +41,7 @@ If the directory is missing (which is likely), add the line
 export ROS_PACKAGE_PATH=~/[your ros workspace]/src:${ROS_PACKAGE_PATH}
 ~~~~
 to the file `~/.bashrc`.
+For this to take effect, you should close and reopen the terminal or type `source ~/.bashrc`.
 
 To get the files for this project from git, start a terminal window and navigate to the `src` folder.
 Now run
@@ -54,7 +55,7 @@ If mavros is not included, create a folder and get the files from `https://githu
 
 You should only have one mavros installation in your ROS path, i.e. you should not have mavros installed in another workspace or from the Ubuntu repositories (the mavros version that is currently available there is too old).
 
-To make sure that you mavros can access your USB port, you might need to add your user to the group `dialout` by executing `sudo usermod -a -G dialout $USER`.
+To make sure that mavros can access your USB port, you might need to add your user to the group `dialout` by executing `sudo usermod -a -G dialout $USER`.
 (You might need to log out out and log in againt for this to take effect.)
 Futhermore you need to install the control toolbox using `sudo apt-get install ros-indigo-control-toolbox` to use mavros.
 
@@ -87,7 +88,7 @@ roslaunch quad_control single_quad_mavros.launch
 and 
 ~~~~
 source ./devel/setup.bash
-rqt --standalone  tabbedGUI --args
+rqt --standalone  tabbedGUI --args Iris1/
 ~~~~
 
 ### Start Quadcopter
@@ -111,4 +112,4 @@ sudo apt-get purge ros-indigo*
 sudo apt-get purge python-rosdep python-rospkg python-rosinstall
 sudo apt-get autoremove
 ~~~~
-and remove all lines in `~/.bashrc` concerning ROS.
+and remove all lines concerning ROS from `~/.bashrc`.

@@ -1,4 +1,6 @@
 <launch>
+    <group ns="Iris1">
+
 	<!-- vim: set ft=xml noet : -->
 
 	<!-- from apm2.launch -->
@@ -57,4 +59,5 @@
     <param name="MAX_ANGLE_DEG" value="45.0"/> 
     <param name="MAX_PSI_SPEED_Deg" value="200.0"/>   
 
+    </group>
 </launch>
