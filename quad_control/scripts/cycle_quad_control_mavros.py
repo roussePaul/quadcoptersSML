@@ -35,6 +35,9 @@ from quad_control.srv import *
 # when Mocap is used this is necessary
 import mocap_source
 
+# to work with directories relative to ROS packages
+from rospkg import RosPack
+
 import numpy
 from numpy import *
 from numpy import cos as c
@@ -186,7 +189,11 @@ class quad_controller():
             # string for time: used for generating files
             tt = str(int(rospy.get_time() - self.TimeSaveData))
 
-            self.file_handle  = file('/home/smladmin/TUTORIAL_PPER/'+ns+'_data_'+tt+'.txt', 'w')
+            # determine ROS workspace directory
+            rp = RosPack()
+            package_path = rp.get_path('quad_control')
+            self.file_handle  = file(package_path+'/../../'+ns+'_data_'+tt+'.txt', 'w')
+
             # if GUI request data to be saved, set falg to true
             self.SaveDataFlag = True
         else:
@@ -311,7 +318,7 @@ class quad_controller():
                 # in case Qs is not defined yet
                 try: 
                     # close mocap connection
-                    self.Qs._stop_measurement()
+                    # self.Qs._stop_measurement()
                     del self.Qs
 
                     self.flagMOCAP_On = False

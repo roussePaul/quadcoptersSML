@@ -102,9 +102,10 @@ class saver_mavrosPlugin(Plugin):
         # Button to UnArm Quad
         self._widget.UnArmQuad.clicked.connect(self.UnArming_Quad) 
 
-        self._widget.MODE_LAND.stateChanged.connect(self.ChangeMode)
-        self._widget.MODE_STABILIZE.stateChanged.connect(self.ChangeMode)
-        self._widget.MODE_ACRO.stateChanged.connect(self.ChangeMode)
+        self._widget.ModeLAND.toggled.connect(self.ChangeMode)
+        self._widget.ModeSTABILIZE.toggled.connect(self.ChangeMode)
+        self._widget.ModeACRO.toggled.connect(self.ChangeMode)
+
 
     def MinThrottle(self):
         #Change the flight mode on the Pixhawk flight controller
@@ -131,15 +132,17 @@ class saver_mavrosPlugin(Plugin):
             # return False
 
         
-    def ChangeMode(self):
-        if self._widget.MODE_LAND.isChecked():
-            self.Set_Flight_Mode('LAND')
+    def ChangeMode(self, value):
+        if value: # only for pressed button (avoids double reaction)
 
-        if self._widget.MODE_STABILIZE.isChecked():
-            self.Set_Flight_Mode('STABILIZE')
+            if self._widget.ModeLAND.isChecked():
+                self.Set_Flight_Mode('LAND')
 
-        if self._widget.MODE_ACRO.isChecked():
-            self.Set_Flight_Mode('ACRO')
+            elif self._widget.ModeSTABILIZE.isChecked():
+                self.Set_Flight_Mode('STABILIZE')
+
+            elif self._widget.ModeACRO.isChecked():
+                self.Set_Flight_Mode('ACRO')
 
 
     def Set_Flight_Mode(self,MODE):
@@ -147,10 +150,10 @@ class saver_mavrosPlugin(Plugin):
         #Change the flight mode on the Pixhawk flight controller
         try:
             # it waits for service for 2 seconds
-            rospy.wait_for_service('mavros/set_mode',2.0)
+            rospy.wait_for_service(self.namespace+'mavros/set_mode',2.0)
 
             try:
-                change_param = rospy.ServiceProxy('mavros/set_mode',SetMode)
+                change_param = rospy.ServiceProxy(self.namespace+'mavros/set_mode',SetMode)
                 param=change_param(0,MODE)
 
                 if param.success:
@@ -171,7 +174,7 @@ class saver_mavrosPlugin(Plugin):
         #This function is used to arm the quad
 
         #Arming the Quad
-        srv_path = 'mavros/cmd/arming'
+        srv_path = self.namespace+'mavros/cmd/arming'
         # if base_name!="":
             # srv_path = "/%s/%s"%(base_name,srv_path)
 
@@ -203,7 +206,7 @@ class saver_mavrosPlugin(Plugin):
         #This function is used to arm the quad."""
 
         #Un-Arming the Quad
-        srv_path = 'mavros/cmd/arming'
+        srv_path = self.namespace+'mavros/cmd/arming'
         # if base_name!="":
             # srv_path = "/%s/%s"%(base_name,srv_path)
 
