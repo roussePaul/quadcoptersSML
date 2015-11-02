@@ -8,6 +8,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 
 
 from quad_control.srv import Controller_Srv
+from quad_control.srv import MocapBodies
 
 from mavros_msgs.srv import CommandBool
 from mavros_msgs.srv import SetMode
@@ -90,7 +91,7 @@ class saver_mavrosPlugin(Plugin):
         self._widget.changeID.clicked.connect(self.changeID)
 
         # Default Value for Id of Quad (as in QUALISYS computer)
-        self._widget.ID.setValue(13)
+        self.set_up_body_list()
 
 
         # SERVICES REALATED TO MAVROS
@@ -319,7 +320,7 @@ class saver_mavrosPlugin(Plugin):
                 AskMocap = rospy.ServiceProxy(self.namespace+'Mocap_Set_Id', Mocap_Id)
 
                 if self._widget.Qualisys.isChecked() == True:
-                    reply = AskMocap(True,self._widget.ID.value(),True)
+                    reply = AskMocap(True,int(self._widget.MocapID.currentText()),True)
 
                     if reply.success == True:
                         # if controller receives message, we know it
@@ -332,7 +333,7 @@ class saver_mavrosPlugin(Plugin):
                         self._widget.Exists.setChecked(False)
                         self._widget.ExistsNot.setChecked(True)
                 else:
-                    reply = AskMocap(False,self._widget.ID.value(),True)
+                    reply = AskMocap(False,int(self._widget.MocapID.currentText()),True)
                     
                     if reply.success == True:
                         # if controller receives message, we know it
@@ -356,7 +357,10 @@ class saver_mavrosPlugin(Plugin):
             self._widget.QualisysFailure.setChecked(True)
             self._widget.Exists.setChecked(False)
             self._widget.ExistsNot.setChecked(False)            
-            pass  
+            pass
+
+        # initialize list of available bodies
+        self.set_up_body_list()
 
 
     #@Slot(bool)
@@ -370,7 +374,7 @@ class saver_mavrosPlugin(Plugin):
                 AskMocap = rospy.ServiceProxy(self.namespace+'Mocap_Set_Id', Mocap_Id)
 
                 if self._widget.Qualisys.isChecked() == True:
-                    reply = AskMocap(True,self._widget.ID.value(),True)
+                    reply = AskMocap(True,int(self._widget.MocapID.currentText()),True)
                     print(reply)
                     if reply.success == True:
                         # if controller receives message, we know it
@@ -413,8 +417,30 @@ class saver_mavrosPlugin(Plugin):
             # is argv is empty return empty string
             return ""
 
+    def set_up_body_list(self):
+        # try to obtain list of available mocap bodies
+        try:
+            rospy.wait_for_service(self.namespace+'MocapBodies', 1.)
+            req_bodies = rospy.ServiceProxy(self.namespace+'MocapBodies', MocapBodies)
+            bodies = req_bodies().bodies
+        except:
+            bodies = range(0,100)
 
+        preferred_index = self._widget.MocapID.currentText()
 
+        # clear existing entries
+        # this may trigger the following bug in QT:
+        # https://bugreports.qt.io/browse/QTBUG-13925
+        self._widget.MocapID.clear()
+        # convert bodies to string list and add as list to entries
+        self._widget.MocapID.insertItems(0, map(str, bodies))
+
+        # try to set new index so the value does not change
+        try:
+            new_index = bodies.index(int(preferred_index))
+            self._widget.MocapID.setCurrentIndex(new_index)
+        except:
+            pass
 
     def shutdown_plugin(self):
         # TODO unregister all publishers here

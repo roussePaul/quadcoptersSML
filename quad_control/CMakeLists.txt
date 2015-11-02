@@ -65,6 +65,7 @@ add_service_files(
   Mocap_Id.srv
   Controller_Srv.srv
   Simulator_Srv.srv
+  MocapBodies.srv
 )
 
 ## Generate actions in the 'action' folder

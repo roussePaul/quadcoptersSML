@@ -112,16 +112,6 @@
         <string>Failure</string>
        </property>
       </widget>
-      <widget class="QSpinBox" name="ID">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>80</y>
-         <width>48</width>
-         <height>27</height>
-        </rect>
-       </property>
-      </widget>
       <widget class="QLabel" name="label">
        <property name="geometry">
         <rect>
@@ -172,6 +162,16 @@
        </property>
        <property name="text">
         <string>Change ID</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="MocapID">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>80</y>
+         <width>51</width>
+         <height>27</height>
+        </rect>
        </property>
       </widget>
      </widget>

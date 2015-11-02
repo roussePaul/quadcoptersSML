@@ -378,7 +378,19 @@ class quad_controller():
                 self.flagMOCAP_On = True
 
                 # service was provided
-                return Mocap_IdResponse(False,True)        
+                return Mocap_IdResponse(False,True)
+
+    # return list of bodies detected by mocap or numbers 1 to 99 if not available
+    def handle_available_bodies(self, dummy):
+        if self.flagMOCAP_On:
+            try: # sometimes mocap causes unpredictable errors
+                bodies = self.Qs.find_available_bodies(False)
+                if len(bodies) > 0:
+                    return {"bodies": bodies[0]}
+            except:
+                pass
+
+        return {"bodies": range(0,100)}
 
 
     def PublishToGui(self,states_d,Input_to_Quad):
@@ -505,6 +517,10 @@ class quad_controller():
         self.flagMOCAP_On = False
         # Service is created, so that Mocap is turned ON or OFF whenever we want
         Save_MOCAP_service = rospy.Service('Mocap_Set_Id', Mocap_Id, self.handle_Mocap)
+
+
+        # Service for providing list of available mocap bodies to GUI
+        mocap_available_bodies = rospy.Service('MocapBodies', MocapBodies, self.handle_available_bodies)
 
 
         #-----------------------------------------------------------------------#
