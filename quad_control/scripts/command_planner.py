@@ -115,7 +115,10 @@ class CommandPlanner:
             traj_service = rospy.ServiceProxy('Iris1/TrajDes_GUI', TrajDes_Srv)
 
             # call function
-            traj, offset, rotation, parameters = eval("self._traj_" + traj_command)
+            try:
+                traj, offset, rotation, parameters = eval("self._traj_" + traj_command)
+            except:
+                rospy.logwarn('invalid trajectory command: '+traj_command)
 
             traj_service(traj, offset, rotation, parameters)
         except rospy.ROSException, rospy.ServiceException:
