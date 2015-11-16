@@ -59,6 +59,7 @@ You should only have one mavros installation in your ROS path, i.e. you should n
 To make sure that mavros can access your USB port, you might need to add your user to the group `dialout` by executing `sudo usermod -a -G dialout $USER`.
 (You might need to log out out and log in againt for this to take effect.)
 Futhermore you need to install the control toolbox, which is required by mavros, by running the command `sudo apt-get install ros-indigo-control-toolbox` in a terminal.
+You also have to install MAVLink, NumPy and SciPy if they are not already installed (use `sudo apt-get install ros-indigo-mavlink python-numpy python-scipy`).
 
 ## Build Project
 
