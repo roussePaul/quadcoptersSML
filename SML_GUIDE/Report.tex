@@ -1,0 +1,37 @@
+%% The 'procedia' option causes ecrc to approximate to the Word template
+\documentclass[3p,times,procedia]{elsarticle}
+
+	%%% The `ecrc' package must be called to make the CRC functionality available
+	%\usepackage{ecrc}
+
+\usepackage{./SetUps/Custom}
+
+\input{./SetUps/format}
+
+\input{./SetUps/CustomCommands}
+
+\begin{document}
+
+	
+	\input{./Contents/2015_06}	
+	
+	\newpage
+	\section{SetUp}
+	\input{./Contents/SetUp}	
+	
+	\newpage
+	\section{ACRO Mode}
+	\input{./Contents/Modes}
+	
+	\newpage
+	\section{Qualisys}
+	\input{./Contents/Qualisys}
+	
+%	\newpage
+%	
+	%%%% Bibliografia %%%%
+	\bibliographystyle{unsrt} %agsm
+	\bibliography{bibliography}
+	\clearpage
+		
+\end{document}
