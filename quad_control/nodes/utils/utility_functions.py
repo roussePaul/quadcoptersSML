@@ -104,13 +104,13 @@ def rot_to_ea_deg(rot):
 	return phi*180.0/pi, theta*180.0/pi, psi*180.0/pi
 
 
-def ea_to_rot(ea_rad):
+def ea_to_rot(roll, pitch, yaw):
 	"""This function returns the rotation matrix corresponding to the euler
 	angles ee_rad.
 	"""
-	aux = rot_z(ea_rad[2])
-	aux = aux.dot(rot_y(ea_rad[1]))
-	aux = aux.dot(rot_x(ea_rad[0]))
+	aux = rot_z(yaw)
+	aux = aux.dot(rot_y(pitch))
+	aux = aux.dot(rot_x(roll))
 	return aux
 
 
