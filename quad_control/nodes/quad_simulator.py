@@ -90,7 +90,7 @@ def stabilize_mode(p, v, rot, cmd):
     pitch_des = -(pitch_cmd-1500)*max_tilt/500
     
     # gain of the inner loop for attitude control
-    ktt = sp.ktt_inner_loop
+    ktt = sp.inner_loop_gain
     
     # desired thrust versor
     e3 = numpy.array([0.0, 0.0, 1.0])
@@ -124,11 +124,6 @@ def stabilize_mode(p, v, rot, cmd):
     dv = kt*thrust_cmd*atv/sp.quad_mass - sp.g*e3
     drot = rot.dot(uf.skew(omega))
     
-    # This is my face when I realized that Pedro actually implemented the inner
-    # loop instead of just changing the pose instantaneously.
-    
-    # O_O
-    
     return dp, dv, drot
 
 
@@ -152,6 +147,9 @@ class QuadSimulator:
         self.cmd = [1500.0, 1500.0, sp.neutral_thrust, 1500.0]
         #self.cmd = [0.0, 0.0, 0.0, 0.0]
         
+        # current time
+        self.time = None
+        
         # current state
         self.p = numpy.zeros(3)
         self.v = numpy.zeros(3)
@@ -159,8 +157,6 @@ class QuadSimulator:
         
         # solver for the simulator
         self.solver = ode(self.ode_f).set_integrator('dopri5')
-        x0 = vectorize_quad_state(self.p, self.v, self.rot)
-        self.solver.set_initial_value(x0)
         
         # current dynamics (python callable)
         self.dynamics = stabilize_mode
@@ -186,13 +182,25 @@ class QuadSimulator:
         # quad state message
         qsm = qcm.QuadStateMsg()
         
-        qsm.time = self.solver.t
-        print(self.solver.t)
+        qsm.time = self.time
+        #print(self.solver.t)
         qsm.x, qsm.y, qsm.z = self.p
         qsm.vx, qsm.vy, qsm.vz = self.v
         qsm.roll, qsm.pitch, qsm.yaw = uf.rot_to_ea_deg(self.rot)
         
         return qsm
+        
+    
+    def write_quad_pose_msg(self):
+    
+        # quad pose message
+        qpm = qcm.QuadPoseMsg()
+        
+        qpm.time = self.time
+        qpm.x, qpm.y, qpm.z = self.p
+        qpm.roll, qpm.pitch, qpm.yaw = uf.rot_to_ea_deg(self.rot)
+        
+        return qpm
         
         
     def get_cmd_msg(self, msg):
@@ -211,14 +219,26 @@ class QuadSimulator:
         # initialize a ROS node corresponding to the simulator
         rospy.init_node('quad_simulator')
         
+        # initialize the time
+        initial_time = rospy.get_time()
+        self.time = initial_time
+        
+        # initialize the ODE solver
+        y0 = vectorize_quad_state(self.p, self.v, self.rot)
+        self.solver.set_initial_value(y0, initial_time)
+        
         # the node subscribes to the topic 'quad_cmd'
-        # 'qcm.quad_cmd' is the class corresponding to a 'quad_cdm' message
-        # 'self.get_cmd_msg' is the callback called when a cmd message is received
+        # 'qcm.QuadCmdMsg' is the class corresponding to a 'QuadCmdMsg' message
+        # 'self.get_cmd_msg' is the callback called when a 'QuadCmdMsg' message is received
         quad_cmd_sub = rospy.Subscriber('quad_cmd', qcm.QuadCmdMsg, self.get_cmd_msg)
         
-        # the node publishes to the topic 'quad_state'
-        # 'qcm.quad_state' is the class corresponding to a 'quad_state' message
+        # the node publishes the quad state to the topic 'quad_state'
+        # 'qcm.QuadStateMsg' is the class corresponding to a 'quad_state' message
         quad_state_pub = rospy.Publisher('quad_state', qcm.QuadStateMsg, queue_size=10)
+        
+        # the node publishes the quad pose to the topic 'quad_pose'
+        # 'qcm.quad_pose' is the class corresponding to a 'quad_state' message
+        quad_pose_pub = rospy.Publisher('quad_pose', qcm.QuadPoseMsg, queue_size=10)
         
         rate = rospy.Rate(self.frequency)
         
@@ -227,18 +247,25 @@ class QuadSimulator:
             # give the new control input to the ODE solver
             self.solver.set_f_params(self.cmd)
             
+            # get the current time
+            current_time = rospy.get_time()
+            
             # run the ODE solver
-            self.solver.integrate(self.solver.t+1.0/self.frequency)
+            self.solver.integrate(current_time)
             
             # prepare the ODE solver for the next round
-            self.solver.set_initial_value(self.solver.y, self.solver.t)
+            #self.solver.set_initial_value(self.solver.y, current_time)
             
             # publish the quad state
             quad_state_msg = self.write_quad_state_msg()
             quad_state_pub.publish(quad_state_msg)
             
+            # publish the quad pose
+            quad_pose_msg = self.write_quad_pose_msg()
+            quad_pose_pub.publish(quad_pose_msg)
+            
             # update the quad state
-            print self.p
+            self.time = current_time - initial_time
             self.p, self.v, self.rot = unvectorize_quad_state(self.solver.y)
             
             # let the node sleep
@@ -246,7 +273,8 @@ class QuadSimulator:
             
         rospy.spin()
         
-        
+
+# executing the node
 if __name__ == '__main__':
     sim = QuadSimulator()
     sim.work()

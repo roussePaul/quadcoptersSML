@@ -5,7 +5,7 @@ a quad from position measurements.
 import numpy
 
 
-class Median_Filter_3D:
+class MedianFilter3D:
     """This class implements a median filter.
 	Such filters will be used to derive velocity estimates from position
 	measurements.
@@ -21,7 +21,7 @@ class Median_Filter_3D:
         self.data[-1] = numpy.array(new_data)
 
     def output(self):
-        print self.data
+        #print self.data
         return numpy.median(self.data, axis=0)
 
     def update_and_output(self, new_data):
@@ -29,14 +29,14 @@ class Median_Filter_3D:
         return self.output()
 
 
-class Velocity_Filter:
+class VelocityFilter:
 	"""This class implements a filter for estimating a velocity from
 	position measurements.
 	It is based on the Median_Filter_3D class.
 	"""
 	
 	def __init__(self, order, initial_position, initial_time):
-	    self.median_filter = Median_Filter_3D(order)
+	    self.median_filter = MedianFilter3D(order)
 	    self.old_position = numpy.array(initial_position)
 	    self.old_time = initial_time
 	    
@@ -48,7 +48,7 @@ class Velocity_Filter:
 	    return self.median_filter.update_and_output(vel_estimate)
 
 
-vel_fil = Velocity_Filter(4, [0.0, 0.0, 0.0], 0.0)
-print(vel_fil.update_and_output([1, 2, 3], 0.2))
-print(vel_fil.update_and_output([2, 3, 4], 0.4))
-print(vel_fil.update_and_output([3, 4, 5], 0.6))
+#vel_fil = VelocityFilter(4, [0.0, 0.0, 0.0], 0.0)
+#print(vel_fil.update_and_output([1, 2, 3], 0.2))
+#print(vel_fil.update_and_output([2, 3, 4], 0.4))
+#print(vel_fil.update_and_output([3, 4, 5], 0.6))

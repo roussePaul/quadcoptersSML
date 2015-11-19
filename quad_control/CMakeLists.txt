@@ -50,6 +50,9 @@ add_message_files(
 FILES
 QuadStateMsg.msg
 QuadCmdMsg.msg
+ControllerStateMsg.msg
+QuadPoseMsg.msg
+ReferenceTrajectoryMsg.msg
 )
 
 ## Generate services in the 'srv' folder

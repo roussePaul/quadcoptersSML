@@ -1,11 +1,11 @@
 # is the body found by the mocap system
 bool found_body
 
-#-------------------------#
+
 # time
 float64 time
 
-#-------------------------#
+
 # State of the Quad
 
 # linear position
