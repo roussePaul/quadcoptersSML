@@ -18,39 +18,9 @@ import rospy
 
 import quad_control.msg as qcm
 
+import controllers
+
 import numpy as np
-from numpy import cos as c
-from numpy import sin as s
-
-import utils.utility_functions as uf
-
-import utils.filters
-
-    
-
-class QuadController:
-    """Skeleton for the QuadController class.
-    Real controllers can be obtained by inheritance.
-    """
-
-    def __init__(self):
-        pass
-        
-    def control_law(self, t, p, ea_deg, v, a, rp, rv, ra, rj, rs, rc):
-        cmd = None
-        return cmd
-    
-
-class QuadControllerZero(QuadController):
-
-    def __init__(self):
-        QuadController.__init__(self)
-        
-    def control_law(self, t, p, ea_deg, v, a, rp, rv, ra, rj, rs, rc):
-        cmd = [0.0, 0.0, 0.0, 0.0]
-        return cmd
-
-
 
 class QuadControllerNode:
     """The QuadControllerNode class.
@@ -95,12 +65,8 @@ class QuadControllerNode:
         self.rs = np.zeros(3)
         self.rc = np.zeros(3)
         
-        # filter to estimate the velocity of the quad
-        order = 3
-        self.velocity_filter = utils.filters.VelocityFilter(order, np.zeros(3), 0.0)
-        
         # current controller
-        self.controller = QuadControllerZero()
+        self.controller = None
         
         
     def get_quad_pose(self, qpm):
@@ -168,6 +134,9 @@ class QuadControllerNode:
         # initialize the time
         initial_time = rospy.get_time()
         self.time = 0.0
+        
+        # initialize the controller
+        self.controller = controllers.ControllerZero()
         
         # publisher of the control input signal
         cmd_pub = rospy.Publisher('quad_cmd', qcm.QuadCmdMsg, queue_size=10)

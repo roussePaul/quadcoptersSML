@@ -19,7 +19,7 @@ find_package(catkin REQUIRED
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -104,11 +104,17 @@ std_msgs  # Or other packages containing msgs
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #INCLUDE_DIRS utils
-LIBRARIES utils
-CATKIN_DEPENDS roscpp rospy std_msgs message_runtime utils
-DEPENDS system_lib utils
+#LIBRARIES utils
+CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+DEPENDS system_lib
 )
 
+catkin_install_python(
+PROGRAMS
+scripts/quad_controller_node.py
+scripts/quad_simulator_node.py
+DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ###########
 ## Build ##
@@ -119,7 +125,6 @@ DEPENDS system_lib utils
 # include_directories(utils)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  utils
 )
 
 ## Declare a C++ library
