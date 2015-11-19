@@ -48,9 +48,7 @@ find_package(catkin REQUIRED
 ## Generate messages in the 'msg' folder
 add_message_files(
 FILES
-QuadStateMsg.msg
 QuadCmdMsg.msg
-ControllerStateMsg.msg
 QuadPoseMsg.msg
 ReferenceTrajectoryMsg.msg
 )
@@ -105,10 +103,10 @@ std_msgs  # Or other packages containing msgs
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-# INCLUDE_DIRS include
-LIBRARIES quad_control
-CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
-DEPENDS system_lib
+#INCLUDE_DIRS utils
+LIBRARIES utils
+CATKIN_DEPENDS roscpp rospy std_msgs message_runtime utils
+DEPENDS system_lib utils
 )
 
 
@@ -121,6 +119,7 @@ DEPENDS system_lib
 # include_directories(utils)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  utils
 )
 
 ## Declare a C++ library

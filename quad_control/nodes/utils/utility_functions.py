@@ -114,6 +114,6 @@ def ea_to_rot(roll, pitch, yaw):
 	return aux
 
 
-def ea_deg_to_rot(ae_deg):
+def ea_deg_to_rot(rd, pd, yd):
 
-    return ea_to_rot(ea_deg*pi/180.0)
+    return ea_to_rot(rd*pi/180.0, pd*pi/180.0, yd*pi/180.0)

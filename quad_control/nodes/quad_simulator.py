@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """This file implements the quad simulator.
 There are different dynamics that you can choose from.
-The dynamics can be changed by setting the function 'derivatives' to one of the
-given dynamics function.
+The dynamics can be changed by setting the object 'quad_simulator' to one of the
+simulators at disposal.
 Of course, more dynamics functions can be defined and added to the simulator.
-The dynamics can be changed dynamically using a ROS service.
+The type of simulator can be changed dynamically using a ROS service.
 """
 
 """The weird line on top
@@ -46,90 +46,136 @@ def unvectorize_quad_state(x):
     return p, v, rot
 
 
-def zero_dynamics(p, v, rot, cmd):
-    """This function is one of the possible quad dynamics.
-    This functions correponds to the trivial dynamics, i.e. to a quad that
-    never changes position or attitude, regardless of the input.
-    """
-    dp = numpy.zeros(3)
-    dv = numpy.zeros(3)
-    drot = numpy.eye(3)
-    return dp, dv, drot
-
-
-def stabilize_mode(p, v, rot, cmd):
-    """This function is one of the possible quad dynamics.
-    This functions correponds to the so-called 'fully actuated' quad.
-    The control input determines the pose (roll and pitch) of the quad in zero
-    time.
-    The control input also determines the thrust and the yaw rate.
-    This simulator corresponds to the IRIS quad in the 'stabilize' mode.
-    """
-    
-    # unpacking the control input
-    roll_cmd, pitch_cmd, thrust_cmd, yaw_rate_cmd = cmd
-    
-    # extracting the euler angles corresponding to the current pose
-    ea = uf.rot_to_ea(rot)
-    
-    # current yaw
-    yaw = ea[2]
-    
-    # maximum yaw rate
-    max_yaw_rate_deg = sp.max_yaw_rate_deg
-    max_yaw_rate = max_yaw_rate_deg*pi/180
-    
-    # maximum tilt
-    max_tilt_deg = sp.max_tilt_deg
-    max_tilt = max_tilt_deg*pi/180
-    
-    # desired roll
-    roll_des = (roll_cmd-1500)*max_tilt/500
-    
-    # desired pitch
-    pitch_des = -(pitch_cmd-1500)*max_tilt/500
-    
-    # gain of the inner loop for attitude control
-    ktt = sp.inner_loop_gain
-    
-    # desired thrust versor
-    e3 = numpy.array([0.0, 0.0, 1.0])
-    dtv = uf.ea_to_rot(roll_des, pitch_des, yaw).dot(e3)
-    
-    # actual thrust versor
-    atv = rot.dot(e3)
-    
-    # angular velocity
-    aux = ktt*uf.skew(atv).dot(dtv)
-    rot_t = numpy.transpose(rot)
-    omega = rot_t.dot(aux)
-    
-    # yaw rate
-    omega[2] = -(yaw_rate_cmd-1500)*max_yaw_rate/500
-    
-    # neutral thrust
-    nt = sp.neutral_thrust
-    
-    # thrust gain
-    kt = sp.quad_mass*sp.g/nt
-    
-    # thrust command adjustment
-    # The thrust sent to the motors is automatically adjusted according to
-    # the tilt angle of the vehicle (bigger tilt leads to bigger thrust)
-    # to reduce the thrust compensation that the pilot must give.
-    thrust_cmd = thrust_cmd/numpy.dot(atv,e3)
-    
-    # dynamics
-    dp = v
-    dv = kt*thrust_cmd*atv/sp.quad_mass - sp.g*e3
-    drot = rot.dot(uf.skew(omega))
-    
-    return dp, dv, drot
-
-
 class QuadSimulator:
-    """This class implements the quad simulator.
-    The dynamics of the simulator depend on the 'derivatives' function.
+    """Skeleton class for the quad simulator."""
+    
+    def __init__(self, t, p, ea_deg, u):
+        pass
+        
+    def update_pose(self, tf, p, ea_deg, u):
+        new_p = None
+        new_ea_deg = None
+        return new_p, new_ea_deg
+        
+
+class QuadSimulatorZero(QuadSimulator):
+    """Dumb simulator that leaves the quad where it is."""
+
+    def __init__(self, t, p, ea_deg, u):
+        QuadSimulator.__init__(self, t, p, ea_deg, u)
+        
+    def update_pose(self, tf, p, ea_deg, u):
+        new_p = numpy.array(p)
+        new_ea_deg = numpy.array(ea_deg)
+        return new_p, new_ea_deg
+    
+
+class QuadSimulatorStabilizeMode(QuadSimulator):
+    """Simulator corresponding to the stabilize mode of the IRIS."""
+
+    def __init__(self, t, p, ea_deg, u):
+        
+        QuadSimulator.__init__(self, t, p, ea_deg, u)
+        
+        self.t = t
+        self.p = numpy.array(p)
+        self.v = numpy.zeros(3)
+        self.rot = uf.ea_deg_to_rot(*ea_deg)
+        
+        self.cmd = list(u)
+        
+        self.solver = ode(self.ode_f).set_integrator('dopri5')
+        y0 = vectorize_quad_state(self.p, self.v, self.rot)
+        self.solver.set_initial_value(y0, self.t)
+    
+    
+    def dynamics(self, p, v, rot, cmd):
+        
+        # unpacking the control input
+        roll_cmd, pitch_cmd, thrust_cmd, yaw_rate_cmd = cmd
+    
+        ea = uf.rot_to_ea(rot)
+    
+        # current yaw
+        yaw = ea[2]
+    
+        # maximum yaw rate
+        max_yaw_rate_deg = sp.max_yaw_rate_deg
+        max_yaw_rate = max_yaw_rate_deg*pi/180
+    
+        # maximum tilt
+        max_tilt_deg = sp.max_tilt_deg
+        max_tilt = max_tilt_deg*pi/180
+    
+        # desired roll
+        roll_des = (roll_cmd-1500)*max_tilt/500
+    
+        # desired pitch
+        pitch_des = -(pitch_cmd-1500)*max_tilt/500
+    
+        # gain of the inner loop for attitude control
+        ktt = sp.inner_loop_gain
+    
+        # desired thrust versor
+        e3 = numpy.array([0.0, 0.0, 1.0])
+        dtv = uf.ea_to_rot(roll_des, pitch_des, yaw).dot(e3)
+    
+        # actual thrust versor
+        atv = rot.dot(e3)
+    
+        # angular velocity
+        aux = ktt*uf.skew(atv).dot(dtv)
+        rot_t = numpy.transpose(rot)
+        omega = rot_t.dot(aux)
+    
+        # yaw rate
+        omega[2] = -(yaw_rate_cmd-1500)*max_yaw_rate/500
+    
+        # neutral thrust
+        nt = sp.neutral_thrust
+    
+        # thrust gain
+        kt = sp.quad_mass*sp.g/nt
+    
+        # thrust command adjustment
+        # The thrust sent to the motors is automatically adjusted according to
+        # the tilt angle of the vehicle (bigger tilt leads to bigger thrust)
+        # to reduce the thrust compensation that the pilot must give.
+        thrust_cmd = thrust_cmd/numpy.dot(atv,e3)
+    
+        # dynamics
+        dp = v
+        dv = kt*thrust_cmd*atv/sp.quad_mass - sp.g*e3
+        drot = rot.dot(uf.skew(omega))
+        
+        return dp, dv, drot
+    
+    
+    def ode_f(self, t, y, u):
+        
+        p, v, rot = unvectorize_quad_state(y)
+        dp, dv, drot = self.dynamics(p, v, rot, u)
+        dy = vectorize_quad_state(dp, dv, drot)
+        return dy
+    
+    
+    def update_pose(self, tf, p, ea_deg, cmd):
+        
+        self.solver.set_f_params(self.cmd)
+        new_y = self.solver.integrate(tf)
+        self.solver.set_initial_value(self.solver.y, tf)
+    
+        self.p, self.v, self.rot = unvectorize_quad_state(new_y)
+        new_ea_deg = list(uf.rot_to_ea_deg(self.rot))
+        
+        return self.p, new_ea_deg
+
+
+
+class QuadSimulatorNode:
+    """This class implements the quad simulator node.
+    The dynamics of the simulator depend on the object 'quad_simulator'
+    that this class contains as a member.
     """
 
     def __init__(self):
@@ -150,55 +196,28 @@ class QuadSimulator:
         # current time
         self.time = None
         
-        # current state
+        # current pose
         self.p = numpy.zeros(3)
-        self.v = numpy.zeros(3)
-        self.rot = numpy.eye(3)
+        #self.v = numpy.zeros(3)
+        self.ea_deg = numpy.zeros(3)
         
         # solver for the simulator
-        self.solver = ode(self.ode_f).set_integrator('dopri5')
+        #self.solver = ode(self.ode_f).set_integrator('dopri5')
         
         # current dynamics (python callable)
-        self.dynamics = stabilize_mode
+        #self.dynamics = stabilize_mode
         
-        
-    def ode_f(self, t, y, u):
-        """This is the function that needs to be passed to the ODE solver.
-        It needs to have the following format.
-        It takes the parameters t, y, u in that order, where dy = f(t,y,u).
-        It returns dy.
-        Here y is a vectorized version of the quad state.
-        """
-
-        p, v, rot = unvectorize_quad_state(y)
-        dp, dv, drot = self.dynamics(p, v, rot, u)
-        dy = vectorize_quad_state(dp, dv, drot)
-        
-        return dy
-        
-        
-    def write_quad_state_msg(self):
-        
-        # quad state message
-        qsm = qcm.QuadStateMsg()
-        
-        qsm.time = self.time
-        #print(self.solver.t)
-        qsm.x, qsm.y, qsm.z = self.p
-        qsm.vx, qsm.vy, qsm.vz = self.v
-        qsm.roll, qsm.pitch, qsm.yaw = uf.rot_to_ea_deg(self.rot)
-        
-        return qsm
-        
+        # current simulator
+        self.quad_simulator = None
     
+        
     def write_quad_pose_msg(self):
     
-        # quad pose message
         qpm = qcm.QuadPoseMsg()
         
         qpm.time = self.time
         qpm.x, qpm.y, qpm.z = self.p
-        qpm.roll, qpm.pitch, qpm.yaw = uf.rot_to_ea_deg(self.rot)
+        qpm.roll, qpm.pitch, qpm.yaw = self.ea_deg
         
         return qpm
         
@@ -223,21 +242,16 @@ class QuadSimulator:
         initial_time = rospy.get_time()
         self.time = initial_time
         
-        # initialize the ODE solver
-        y0 = vectorize_quad_state(self.p, self.v, self.rot)
-        self.solver.set_initial_value(y0, initial_time)
+        # initialize the simulator
+        self.quad_simulator = QuadSimulatorStabilizeMode(initial_time, self.p, self.ea_deg, self.cmd)
         
         # the node subscribes to the topic 'quad_cmd'
         # 'qcm.QuadCmdMsg' is the class corresponding to a 'QuadCmdMsg' message
         # 'self.get_cmd_msg' is the callback called when a 'QuadCmdMsg' message is received
         quad_cmd_sub = rospy.Subscriber('quad_cmd', qcm.QuadCmdMsg, self.get_cmd_msg)
         
-        # the node publishes the quad state to the topic 'quad_state'
-        # 'qcm.QuadStateMsg' is the class corresponding to a 'quad_state' message
-        quad_state_pub = rospy.Publisher('quad_state', qcm.QuadStateMsg, queue_size=10)
-        
         # the node publishes the quad pose to the topic 'quad_pose'
-        # 'qcm.quad_pose' is the class corresponding to a 'quad_state' message
+        # 'qcm.quad_pose' is the class corresponding to a 'QuadPoseMsg' message
         quad_pose_pub = rospy.Publisher('quad_pose', qcm.QuadPoseMsg, queue_size=10)
         
         rate = rospy.Rate(self.frequency)
@@ -245,28 +259,23 @@ class QuadSimulator:
         while not rospy.is_shutdown():
         
             # give the new control input to the ODE solver
-            self.solver.set_f_params(self.cmd)
+            #self.solver.set_f_params(self.cmd)
             
             # get the current time
             current_time = rospy.get_time()
-            
-            # run the ODE solver
-            self.solver.integrate(current_time)
-            
-            # prepare the ODE solver for the next round
-            #self.solver.set_initial_value(self.solver.y, current_time)
-            
-            # publish the quad state
-            quad_state_msg = self.write_quad_state_msg()
-            quad_state_pub.publish(quad_state_msg)
             
             # publish the quad pose
             quad_pose_msg = self.write_quad_pose_msg()
             quad_pose_pub.publish(quad_pose_msg)
             
-            # update the quad state
+            # update the quad pose
+            #self.p, self.v, self.rot = unvectorize_quad_state(self.solver.y)
+            new_p, new_ea_deg = self.quad_simulator.update_pose(current_time, self.p, self.ea_deg, self.cmd)
+            self.p = numpy.array(new_p)
+            self.ea_deg = numpy.array(new_ea_deg)
+            
+            # update the time
             self.time = current_time - initial_time
-            self.p, self.v, self.rot = unvectorize_quad_state(self.solver.y)
             
             # let the node sleep
             rate.sleep()
@@ -276,6 +285,6 @@ class QuadSimulator:
 
 # executing the node
 if __name__ == '__main__':
-    sim = QuadSimulator()
-    sim.work()
+    sim_node = QuadSimulatorNode()
+    sim_node.work()
 

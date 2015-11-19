@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""This file implements the quad controller.
+"""This file implements the quad controller node.
 There are different control laws that you can choose from.
-The control law can be changed by setting the function 'control_law' to one of
-the given control functions.
-Of course, more control functions can be defined and added to the simulator.
-The dynamics can be changed dynamically using a ROS service.
+The control law can be changed by setting the object 'controller' to one of
+the given controllers.
+Of course, more controllers can be defined and added to the module.
+The controllers can be changed dynamically using a ROS service.
 """
 
 """The weird line on top
@@ -26,18 +26,37 @@ import utils.utility_functions as uf
 
 import utils.filters
 
+    
 
-def zero_control():
-    """This function implements the dumbest possible control law.
-    It always returns zero for all the control input variables.
+class QuadController:
+    """Skeleton for the QuadController class.
+    Real controllers can be obtained by inheritance.
     """
-    return [0.0, 0.0, 0.0, 0.0]
+
+    def __init__(self):
+        pass
+        
+    def control_law(self, t, p, ea_deg, v, a, rp, rv, ra, rj, rs, rc):
+        cmd = None
+        return cmd
+    
+
+class QuadControllerZero(QuadController):
+
+    def __init__(self):
+        QuadController.__init__(self)
+        
+    def control_law(self, t, p, ea_deg, v, a, rp, rv, ra, rj, rs, rc):
+        cmd = [0.0, 0.0, 0.0, 0.0]
+        return cmd
 
 
-class QuadController():
-    """The controller class.
+
+class QuadControllerNode:
+    """The QuadControllerNode class.
     It corresponds to a ROS node.
-    The type of controller depends on the function 'control_law' chosen.
+    The type of controller depends on the object 'controller' that this node
+    contains.
     """
 
     def __init__(self):
@@ -59,6 +78,9 @@ class QuadController():
         # last measured velocity of the quad
         self.v = np.zeros(3)
         
+        # last measured acceleration of the quad
+        self.a = np.zeros(3)
+        
         # last measured attitude of the quad (in degrees)
         self.roll_deg = 0.0
         self.pitch_deg = 0.0
@@ -77,8 +99,8 @@ class QuadController():
         order = 3
         self.velocity_filter = utils.filters.VelocityFilter(order, np.zeros(3), 0.0)
         
-        # current control law
-        self.control_law = zero_control
+        # current controller
+        self.controller = QuadControllerZero()
         
         
     def get_quad_pose(self, qpm):
@@ -130,7 +152,8 @@ class QuadController():
         message = qcm.QuadCmdMsg()
         
         message.time = self.time
-        message.cmd_1, message.cmd_2, message.cmd_3, message.cmd_4 = self.control_law()
+        ea_deg = (self.roll_deg, self.pitch_deg, self.yaw_deg)
+        message.cmd_1, message.cmd_2, message.cmd_3, message.cmd_4 = self.controller.control_law(self.time, self.p, ea_deg, self.v, self.a, self.rp, self.rv, self.ra, self.rj, self.rs, self.rc)
         
         return message
         
@@ -143,7 +166,7 @@ class QuadController():
         rospy.init_node('controller')
         
         # initialize the time
-        initial_time = rospy.get_time
+        initial_time = rospy.get_time()
         self.time = 0.0
         
         # publisher of the control input signal
@@ -161,16 +184,16 @@ class QuadController():
         # do work
         while not rospy.is_shutdown():
         
-            self.write_quad_cmd_msg()
-            
-            self.time = rospy.get_time()
+            cmd_msg = self.write_quad_cmd_msg()
+            cmd_pub.publish(cmd_msg)
+            self.time = rospy.get_time() - initial_time
     
             rate.sleep()
     
         rospy.spin()
         
         
-        
+# run the node
 if __name__ == '__main__':
-    controller = QuadController()
-    controller.work()
+    controller_node = QuadControllerNode()
+    controller_node.work()
