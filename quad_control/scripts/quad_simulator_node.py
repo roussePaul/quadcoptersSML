@@ -80,7 +80,9 @@ class QuadSimulatorNode:
         """This is the callback function that is called when a new value of the
         control input is received from the controller.
         This function copies the new value that has been received in the local
-        variable 'self.control'.
+        variable 'self.cmd'.
+        Only the first four fields of the message are used, which corresponds to
+        position of the sticks of the IRIS remote.
         """
         self.cmd = [msg.cmd_1, msg.cmd_2, msg.cmd_3, msg.cmd_4]
     
