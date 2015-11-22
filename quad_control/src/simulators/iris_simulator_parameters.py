@@ -32,5 +32,12 @@ inner_loop_gain = rospy.get_param("inner_loop_gain_sim", 10.0)
 # maximum yaw rate
 max_yaw_rate_deg = rospy.get_param("max_yaw_rate_deg_sim", 200.0)
 
+
+"""Constants."""
+
+# neutral command
+NEUTRAL_RC_INPUT = numpy.array([1500.0, 1500.0, 1500.0, 1500.0])
+
+
 # test
 # print(g)

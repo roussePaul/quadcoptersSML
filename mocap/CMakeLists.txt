@@ -1,19 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(quad_control)
+project(mocap)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED
-  COMPONENTS
-  roscpp
-  rospy
-  std_msgs
-  message_generation
+find_package(catkin REQUIRED COMPONENTS
+message_generation
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -47,10 +43,9 @@ catkin_python_setup()
 
 ## Generate messages in the 'msg' folder
 add_message_files(
-FILES
-QuadCmdMsg.msg
-QuadPoseMsg.msg
-ReferenceTrajectoryMsg.msg
+  FILES
+  QuadPosition.msg
+  QuadPositionDerived.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -69,8 +64,8 @@ ReferenceTrajectoryMsg.msg
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-DEPENDENCIES
-std_msgs  # Or other packages containing msgs
+  DEPENDENCIES
+  #std_msgs  # Or other packages containing msgs
 )
 
 ################################################
@@ -103,17 +98,10 @@ std_msgs  # Or other packages containing msgs
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#INCLUDE_DIRS utils
-#LIBRARIES utils
-CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
-DEPENDS system_lib
-)
-
-catkin_install_python(
-PROGRAMS
-scripts/iris_controller_node.py
-scripts/iris_simulator_node.py
-DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#  INCLUDE_DIRS include
+#  LIBRARIES mocap
+   CATKIN_DEPENDS message_generation
+#  DEPENDS system_lib
 )
 
 ###########
@@ -122,30 +110,27 @@ DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(utils)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
+# include_directories(include)
 
 ## Declare a C++ library
-# add_library(quad_control
-#   src/${PROJECT_NAME}/quad_control.cpp
+# add_library(mocap
+#   src/${PROJECT_NAME}/mocap.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(quad_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(mocap ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(quad_control_node src/quad_control_node.cpp)
+# add_executable(mocap_node src/mocap_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(quad_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(mocap_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(quad_control_node
+# target_link_libraries(mocap_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -164,7 +149,7 @@ include_directories(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS quad_control quad_control_node
+# install(TARGETS mocap mocap_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -189,7 +174,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_quad_control.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_mocap.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
