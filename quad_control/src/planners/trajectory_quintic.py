@@ -4,9 +4,10 @@ from numpy import sin as s
 
 import planners.trajectory as tj
 
+# for testing
+import matplotlib.pyplot as plt
 
-
-class TrajectoryCubic(tj.Trajectory):
+class TrajectoryQuintic(tj.Trajectory):
     """Cubic trajectory.
     Implements a trajectory that starts in q0 = numpy.zeros(4) and ends in a
     given point qf.
@@ -15,7 +16,7 @@ class TrajectoryCubic(tj.Trajectory):
     """
 
 
-    def __init__(self, offset, rotation, final_point, duration):
+    def __init__(self, offset, rotation, final_point, initial_time, final_time):
         """Arguments:
         - offset (numpy array, 4)
         - rotation (numpy array, 3-by-3)
@@ -25,36 +26,95 @@ class TrajectoryCubic(tj.Trajectory):
         
         tj.Trajectory.__init__(self, offset, rotation)
         
-        t0 = 0.0
+        t0 = initial_time
         q0 = numpy.zeros(4)
         dq0 = numpy.zeros(4)
-        qf = final_point
-        tf = duration        
+        ddq0 = numpy.zeros(4)
+        
+        tf = final_time
+        qf = numpy.array(final_point)
         dqf = numpy.zeros(4)
+        ddqf = numpy.zeros(4)
 
+        self.t0 = t0
+        self.q0 = q0
+        self.tf = tf
+        self.qf = qf
 
         # compute polynomial coefficients
         
         # known term: [q0, dq0, qf, dqf]
-        known_term = numpy.concatenate(q0, dq0, qf, dqf)
+        known_term = numpy.concatenate([q0, dq0, ddq0, qf, dqf, ddqf])
+        #print(known_term)
         
         # matrix of the times
-        matrix_q0 = numpy.kron(numpy.ones(4,1), numpy.array([[1.0, t0, t0**2, t0**3]]))
-        print(matrix_q0)
-        matrix_dq0 = numpy.kron(numpy.ones(4,1), numpy.array([[0.0, 1.0, 2*t0, 3*t0**2]]))
-        matrix_qf = numpy.kron(numpy.ones(4,1), numpy.array([[1.0, tf, tf**2, tf**3]]))
-        matrix_dqf = numpy.kron(numpy.ones(4,1), numpy.array([[0.0, 1.0, 2*tf, 3*tf**2]]))
-        
-        matrix = numpy.concatenate([matrix_q0, matrix_dq0, matrix_qf, matrix_dqf], axis=0)
+        matrix_q0 = numpy.kron(numpy.eye(4), numpy.array([[1.0, t0, t0**2, t0**3, t0**4, t0**5]]))
+        matrix_dq0 = numpy.kron(numpy.eye(4), numpy.array([[0.0, 1.0, 2.0*t0, 3.0*t0**2, 4.0*t0**3, 5.0*t0**4]]))
+        matrix_ddq0 = numpy.kron(numpy.eye(4), numpy.array([[0.0, 0.0, 2.0, 6.0*t0**2, 12.0*t0**2, 20.0*t0**3]]))
+        matrix_qf = numpy.kron(numpy.eye(4), numpy.array([[1.0, tf, tf**2, tf**3, tf**4, tf**5]]))
+        matrix_dqf = numpy.kron(numpy.eye(4), numpy.array([[0.0, 1.0, 2.0*tf, 3.0*tf**2, 4.0*tf**3, 5.0*tf**4]]))
+        matrix_ddqf = numpy.kron(numpy.eye(4), numpy.array([[0.0, 0.0, 2.0, 6.0*tf**2, 12.0*tf**2, 20.0*tf**3]]))
+        matrix = numpy.concatenate([matrix_q0, matrix_dq0, matrix_ddq0, matrix_qf, matrix_dqf, matrix_ddqf], axis=0)
+        #print(matrix)
 
+        # polynomial coefficients
+        self.coeff = numpy.linalg.solve(matrix, known_term)
+        #print(self.coeff)
+        
 
     def _get_untransformed_point(self, time):
 
         t = time
         
-        pass
-        #return p, v, a, j, sn, cr
+        if t >= self.tf:
+
+            q = self.qf
+            dq = numpy.zeros(4)
+            ddq = numpy.zeros(4)
+            dddq = numpy.zeros(4)
+            sn = numpy.zeros(4)
+            cr = numpy.zeros(4)
+            
+            return q, dq, ddq, dddq, sn, cr
+        
+        elif t <= self.t0:
+        
+            q = self.q0
+            dq = numpy.zeros(4)
+            ddq = numpy.zeros(4)
+            dddq = numpy.zeros(4)
+            sn = numpy.zeros(4)
+            cr = numpy.zeros(4)
+            
+            return q, dq, ddq, dddq, sn, cr
+        
+        else:
+        
+            coeff = self.coeff
+            
+            q = numpy.kron(numpy.eye(4), numpy.array([1.0, t, t**2, t**3, t**4, t**5])).dot(coeff)
+            dq = numpy.kron(numpy.eye(4), numpy.array([0.0, 1.0, 2.0*t, 3.0*t**2, 4.0*t**3, 5.0*t**4])).dot(coeff)
+            ddq = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 2.0, 6.0*t, 12.0*t**2, 20.0*t**3])).dot(coeff)
+            dddq = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 6.0, 24.0*t, 60.0*t**2])).dot(coeff)
+            sn = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 0.0, 24.0, 120.0*t])).dot(coeff)
+            cr = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 0.0, 0.0, 120.0])).dot(coeff)
+        
+            return q, dq, ddq, dddq, sn, cr
         
         
 # test
-cubic = TrajectoryCubic(numpy.zeros(4), numpy.eye(3), numpy.ones(4), 10.0)
+#cubic = TrajectoryCubic([0.0, 0.0, 1.0, numpy.pi], numpy.eye(3), [1.0, 2.0, 3.0, numpy.pi], 10.0)
+#q_record = []
+#time_record = [0.01*i for i in range(1000)]
+#for time in time_record:
+#    q, dq, ddq, dddq, sn, cr = cubic.get_point(time)
+#    q_record.append(q)
+#    print(q)
+
+#plt.figure()
+#plt.plot(time_record, q_record)
+#plt.grid()
+#plt.show()
+
+
+

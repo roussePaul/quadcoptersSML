@@ -16,7 +16,7 @@ class TrajectoryCubic(tj.Trajectory):
     """
 
 
-    def __init__(self, offset, rotation, final_point, initial_time, duration):
+    def __init__(self, offset, rotation, final_point, initial_time, final_time):
         """Arguments:
         - offset (numpy array, 4)
         - rotation (numpy array, 3-by-3)
@@ -30,7 +30,7 @@ class TrajectoryCubic(tj.Trajectory):
         q0 = numpy.zeros(4)
         dq0 = numpy.zeros(4)
         qf = numpy.array(final_point)
-        tf = duration        
+        tf = final_time
         dqf = numpy.zeros(4)
 
         self.t0 = t0
