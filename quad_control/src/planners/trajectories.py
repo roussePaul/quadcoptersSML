@@ -4,7 +4,7 @@ and different trajectories can be defined as subclasses.
 A 'Trajectory' class needs to have an 'output' method that takes the current
 time and returns the current value of the trajectory along with the first five
 derivatives.
-All trajectories are in 3D, and the class is not flexible as for that.
+All trajectories are in 4D, that is x, y, z, and yaw.
 Also note that Trajectory objects have no memory. The returned position and the
 derivatives are computed analitically.
 """
@@ -12,6 +12,7 @@ derivatives are computed analitically.
 import numpy
 from numpy import sin as s
 from numpy import cos as c
+
 
 
 class Trajectory:
@@ -31,20 +32,22 @@ class Trajectory:
         return position, velocity, acceleration, jerk, snap, crackle
 
 
+
 class StillTrajectory(Trajectory):
     """A still trajectory (stays forever in the initial point)."""
 
     def __init__(self, offset, rotation):
-        super().__init__(offset, position)
+        Trajectory.__init__(offset, position)
 
     def output(self, time):
         p = numpy.array(self.offset)
-        v = numpy.zeros(3)
-        a = numpy.zeros(3)
-        j = numpy.zeros(3)
-        s = numpy.zeros(3)
-        c = numpy.zeros(3)
+        v = numpy.zeros(4)
+        a = numpy.zeros(4)
+        j = numpy.zeros(4)
+        s = numpy.zeros(4)
+        c = numpy.zeros(4)
         return p, v, a, j, s, c
+
 
 
 class CircleTrajectory(Trajectory):
@@ -94,6 +97,8 @@ class CircleTrajectory(Trajectory):
         p[3] += off[3]
 
         return p, v, a, j, sn, cr
+
+
 
 
 # test

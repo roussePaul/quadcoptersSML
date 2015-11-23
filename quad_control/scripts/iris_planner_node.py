@@ -19,13 +19,9 @@ It is needed by ROS to understand that this file corresponds to a ROS node.
 import rospy
 import numpy
 import quad_control.msg as qcm
-import planners.trajectories as pt
+import planners.trajectory_circle as ct
 
-# trajectory to be published
-trajectory = pt.CircleTrajectory(
-    [0.0, 0.0, 1.0, numpy.pi], numpy.eye(3), 2.0, 0.3)
 
-# convert the trajectory to a message
 
 
 def trajectory_to_referencetrajectorymsg(p, v, a, j, s, c):
@@ -62,11 +58,16 @@ def work():
     # setting the frequency of execution
     rate = rospy.Rate(1e2)
 
+    # trajectory to be published
+    trajectory = ct.TrajectoryCircle(
+        [0.0, 0.0, 1.0, numpy.pi], numpy.eye(3), 2.0, 0.3)
+
     # do work
     while not rospy.is_shutdown():
 
         time = rospy.get_time() - initial_time
-        p, v, a, j, s, c = trajectory.output(time)
+        #print time
+        p, v, a, j, s, c = trajectory.get_point(time)
         msg = trajectory_to_referencetrajectorymsg(p, v, a, j, s, c)
         pub.publish(msg)
         rate.sleep()
