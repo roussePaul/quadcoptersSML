@@ -103,11 +103,11 @@ class TrajectoryQuintic(tj.Trajectory):
         
         
 # test
-#cubic = TrajectoryCubic([0.0, 0.0, 1.0, numpy.pi], numpy.eye(3), [1.0, 2.0, 3.0, numpy.pi], 10.0)
+#quintic = TrajectoryQuintic([0.0, 0.0, 1.0, numpy.pi], numpy.eye(3), [1.0, 2.0, 3.0, numpy.pi], 0.0, 10.0)
 #q_record = []
 #time_record = [0.01*i for i in range(1000)]
 #for time in time_record:
-#    q, dq, ddq, dddq, sn, cr = cubic.get_point(time)
+#    q, dq, ddq, dddq, sn, cr = quintic.get_point(time)
 #    q_record.append(q)
 #    print(q)
 

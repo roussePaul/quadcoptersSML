@@ -135,7 +135,10 @@ class RotorSPlannerNode():
         #trajectory = ct.TrajectoryCircle([0.0, 0.0, 1.0, numpy.pi], numpy.eye(3), 2.0, 0.3)
         #self.trajectory = cbt.TrajectoryCubic([0.0, 0.0, 1.0, 0.0], numpy.eye(3), [2.0, -2.0, 1.0, 0.0], 10.0, 15.0)
         #self.trajectory = qt.TrajectoryQuintic([0.0, 0.0, 1.0, 0.0], numpy.eye(3), [2.0, -2.0, 1.0, 0.0], 5.0, 10.0)
-        self.trajectory = qt.TrajectoryQuintic(self.quad_initial_pose, numpy.eye(3), [2.0, -2.0, 1.0, 0.0], 5.0, 10.0)
+        displacement = rospy.get_param('displacement', default=[0.0, 0.0, 1.0, 0.0])
+        delay = rospy.get_param('delay', default=0.0)
+        duration = rospy.get_param('duration', default=numpy.linalg.norm(displacement))
+        self.trajectory = qt.TrajectoryQuintic(self.quad_initial_pose, numpy.eye(3), displacement, delay, delay+duration)
 
         # do work
         while not rospy.is_shutdown():
