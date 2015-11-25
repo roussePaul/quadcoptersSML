@@ -43,7 +43,7 @@ class RotorSPointSequencePlannerNode():
         pass
 
 
-    def trajectory_to_multi_dof_joint_trajectory(self, p, v, a, j, s, c):
+    def _trajectory_to_multi_dof_joint_trajectory(self, p, v, a, j, s, c):
         """Function to transform a 'Trajectory' object into a
         'MultiDOFJointTrajectoryPoint object'.
         """
@@ -81,7 +81,7 @@ class RotorSPointSequencePlannerNode():
         return msg
 
     
-    def pose_stamped_to_reference_position(self, msg):
+    def _pose_stamped_to_reference_position(self, msg):
         """This function converts a message of type geometry_msgs.PoseStamped
         into a numpy array containing the position (including yaw) of the quad.
         """
@@ -98,37 +98,39 @@ class RotorSPointSequencePlannerNode():
         return numpy.array([x, y, z, yaw])
     
     
-    def get_quad_pose(self, msg):
+    def _get_quad_pose(self, msg):
         """This is the callback used to get the position of the quad."""
         
-        self.quad_pose = self.pose_stamped_to_reference_position(msg)
+        self.quad_pose = self._pose_stamped_to_reference_position(msg)
         self.got_quad_initial_pose_flag = True
     
     
-    def generate_initial_waypoint(self):
-        if self.quad_pose[2] < 0.5:
+    def _generate_initial_waypoint(self):
+        if self.quad_pose[2] < 1.0:
             self.waypoint = numpy.array(self.quad_pose)
-            self.waypoint[2] = 0.5
+            self.waypoint[2] = 1.0
             duration = 2.5*numpy.linalg.norm(self.waypoint-self.quad_pose)
             time = rospy.get_time() - self.initial_time
-            self.trajectory = qt.TrajectoryQuintic(self.quad_pose, numpy.eye(3), time, time+duration, self.waypoint)
+            delay = rospy.get_param('delay', default=1.0)
+            self.trajectory = qt.TrajectoryQuintic(self.quad_pose, numpy.eye(3), delay+time, delay+time+duration, self.waypoint)
         else:
-            self.generate_waypoint()
+            self._generate_waypoint()
 
 
-    def generate_waypoint(self):
+    def _generate_waypoint(self):
         self.waypoint = numpy.array(self.quad_pose)
         distance = numpy.linalg.norm(self.waypoint-self.quad_pose)
         while distance < 0.1:
             x = random.uniform(-1.5, 1.5)
             y = random.uniform(-1.5, 1.5)
-            z = random.uniform(1.0, 2.0)
-            yaw = 0.0
+            z = random.uniform(1.0, 2.5)
+            yaw = random.uniform(-numpy.pi, numpy.pi)
             self.waypoint = numpy.array([x, y, z, yaw])
             distance = numpy.linalg.norm(self.waypoint-self.quad_pose)
-        duration = 2.5*numpy.linalg.norm(self.waypoint-self.quad_pose)
+        duration = 2.0*numpy.linalg.norm(self.waypoint-self.quad_pose)
         time = rospy.get_time() - self.initial_time
-        self.trajectory = qt.TrajectoryQuintic(self.quad_pose, numpy.eye(3), time, time+duration, self.waypoint)
+        delay = rospy.get_param('delay', default=1.0)
+        self.trajectory = qt.TrajectoryQuintic(self.quad_pose, numpy.eye(3), delay+time, delay+time+duration, self.waypoint)
 
 
     def work(self):
@@ -148,10 +150,7 @@ class RotorSPointSequencePlannerNode():
         self.quad_pose = None
         self.got_quad_initial_pose_flag = False
         topic = rospy.get_param('quad_pose_topic', default='ground_truth/pose')
-        self.sub = rospy.Subscriber(topic, gm.PoseStamped, self.get_quad_pose)
-
-        # current waypoint
-        self.waypoint = numpy.array([0.0, 0.0, 1.0, 0.0])
+        self.sub = rospy.Subscriber(topic, gm.PoseStamped, self._get_quad_pose)
 
         # setting the frequency of execution
         rate = rospy.Rate(1e1)
@@ -170,7 +169,7 @@ class RotorSPointSequencePlannerNode():
             rate.sleep()
 
         # generate initial waypoint
-        self.generate_initial_waypoint()
+        self._generate_initial_waypoint()
 
         # do work
         while not rospy.is_shutdown():
@@ -184,11 +183,11 @@ class RotorSPointSequencePlannerNode():
             print self.waypoint
             print numpy.linalg.norm(self.quad_pose-self.waypoint)
             
-            if numpy.linalg.norm(self.quad_pose-self.waypoint) < 0.1:
-                self.generate_waypoint()
+            if numpy.linalg.norm(self.quad_pose-self.waypoint) < 0.5:
+                self._generate_waypoint()
                 
             p, v, a, j, s, c = self.trajectory.get_point(self.time)
-            msg = self.trajectory_to_multi_dof_joint_trajectory(p, v, a, j, s, c)
+            msg = self._trajectory_to_multi_dof_joint_trajectory(p, v, a, j, s, c)
             
             pub.publish(msg)
             rate.sleep()

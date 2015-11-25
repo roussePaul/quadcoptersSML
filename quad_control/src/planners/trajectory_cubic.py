@@ -28,7 +28,7 @@ class TrajectoryCubic(tj.Trajectory):
         
         q0 = numpy.zeros(4)
         dq0 = numpy.zeros(4)
-        qf = numpy.array(final_point)
+        qf = numpy.array(final_point) - numpy.array(offset)
         dqf = numpy.zeros(4)
 
         self.t0 = t0
@@ -51,7 +51,10 @@ class TrajectoryCubic(tj.Trajectory):
         #print(matrix)
 
         # polynomial coefficients
-        self.coeff = numpy.linalg.solve(matrix, known_term)
+        if numpy.linalg.det(matrix) < 0.01:
+            self.coeff = numpy.concatenate([numpy.ones(4), numpy.array(12)])
+        else:
+            self.coeff = numpy.linalg.solve(matrix, known_term)
         #print(self.coeff)
         
 

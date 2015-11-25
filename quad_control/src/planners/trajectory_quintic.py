@@ -53,7 +53,10 @@ class TrajectoryQuintic(tj.Trajectory):
         #print(matrix)
 
         # polynomial coefficients
-        self.coeff = numpy.linalg.solve(matrix, known_term)
+        if numpy.fabs(numpy.linalg.det(matrix)) < 0.01:
+            self.coeff = numpy.concatenate([numpy.ones(4), numpy.zeros(20)])
+        else:
+            self.coeff = numpy.linalg.solve(matrix, known_term)
         #print(self.coeff)
         
 
