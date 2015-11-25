@@ -26,20 +26,15 @@ class TrajectoryQuintic(tj.Trajectory):
         
         tj.Trajectory.__init__(self, offset, rotation, initial_time, final_time)
         
-        t0 = initial_time
+        t0 = 0.0
         q0 = numpy.zeros(4)
         dq0 = numpy.zeros(4)
         ddq0 = numpy.zeros(4)
         
-        tf = final_time
-        qf = numpy.array(final_point)
+        tf = final_time - initial_time
+        qf = numpy.array(final_point) - numpy.array(offset)
         dqf = numpy.zeros(4)
         ddqf = numpy.zeros(4)
-
-        self.t0 = t0
-        self.q0 = q0
-        self.tf = tf
-        self.qf = qf
 
         # compute polynomial coefficients
         
