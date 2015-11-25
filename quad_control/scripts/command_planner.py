@@ -17,13 +17,13 @@ class CommandPlanner:
 
     # callback for service planner_start
     def set_and_run(self, req):
-        self.set_plan(req.plan)
+        self.set_plan(req.plan, req.default_ns)
         self.start()
 
         return []
 
     # sets a plan that is read from plan_string
-    def set_plan(self, plan_string):
+    def set_plan(self, plan_string, default_ns):
         # split string into lines
         command_strings = plan_string.split('\n')
 
@@ -38,11 +38,27 @@ class CommandPlanner:
             if len(split_string) < 2:
                 continue
 
+
+            # split time and namespace
+            time_ns = split_string[0].strip().split(' ')
+            # drop empty strings caused by duplicate blanks
+            time_ns = filter(None, time_ns)
             # skip line if time is not a number
-            try:
-                time = float(split_string[0])
-            except ValueError:
-                continue
+            if len(time_ns) >= 1:
+                try:
+                    time = float(time_ns[0])
+                except ValueError:
+                    continue
+
+            # if namespace is specified in line read it, otherwise set to default
+            if len(time_ns) >= 2:
+                ns = time_ns[1]
+            else:
+                ns = default_ns
+
+            # make sure namespace end with /
+            if not ns.endswith('/'):
+                ns = ns + '/'
 
             # split trajectory and controller command
             command_pair = split_string[1].split(';', 1)
@@ -54,7 +70,7 @@ class CommandPlanner:
                 ctrl_command = ''
 
             # append to command list
-            self._commands.append([time, traj_command, ctrl_command])
+            self._commands.append([time, ns, traj_command, ctrl_command])
 
         # sort command list by time
         self._commands.sort()
@@ -82,13 +98,15 @@ class CommandPlanner:
 
     # callback for timer (starts new timer if last command is not reached)
     def _timer_callback(self, event):
-        traj_command = self._curr_command[1].strip()
-        if len(traj_command) > 0:
-            self._set_traj(traj_command)
+        ns = self._curr_command[1]
 
-        ctrl_command = self._curr_command[2].strip()
+        traj_command = self._curr_command[2].strip()
+        if len(traj_command) > 0:
+            self._set_traj(traj_command, ns)
+
+        ctrl_command = self._curr_command[3].strip()
         if len(ctrl_command) > 0:
-            self._set_ctrl(ctrl_command)
+            self._set_ctrl(ctrl_command, ns)
 
         # load next command
         self._curr_command = self._next()
@@ -107,12 +125,12 @@ class CommandPlanner:
         self._next_entry = self._next_entry + 1
         return ret_val
 
-    def _set_traj(self, traj_command):
-        rospy.loginfo('trajectory command: ' + traj_command)
+    def _set_traj(self, traj_command, ns):
+        rospy.loginfo('trajectory command: \'' + traj_command + '\' on namespace ' + ns)
 
         try:
-            rospy.wait_for_service('Iris1/TrajDes_GUI', 1.0)
-            traj_service = rospy.ServiceProxy('Iris1/TrajDes_GUI', TrajDes_Srv)
+            rospy.wait_for_service(ns + 'TrajDes_GUI', 1.0)
+            traj_service = rospy.ServiceProxy(ns + 'TrajDes_GUI', TrajDes_Srv)
 
             # call function
             try:
@@ -122,10 +140,11 @@ class CommandPlanner:
                 rospy.logwarn('invalid trajectory command: '+traj_command)
 
         except rospy.ROSException, rospy.ServiceException:
-            rospy.logerr('service to set trajectory command failed.')
+            rospy.logerr('service to set trajectory command \'' + traj_command +
+                         '\' on namespace ' +ns + ' failed.')
 
-    def _set_ctrl(self, ctrl_command):
-        rospy.logwarn('controller command: ' + ctrl_command)
+    def _set_ctrl(self, ctrl_command, ns):
+        rospy.logwarn('namespace: ' + ns + 'controller command: ' + ctrl_command)
 
     # this is called for trajectory command hold()
     def _traj_hold(self, x=0, y=0, z=.5):

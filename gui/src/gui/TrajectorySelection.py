@@ -223,9 +223,9 @@ class TrajectorySelectionPlugin(Plugin):
     def planner_start(self):
         try:
             rospy.wait_for_service('planner_start',1)
-            start = rospy.ServiceProxy('planner_start',PlannerStart)
+            start = rospy.ServiceProxy('planner_start', PlannerStart)
 
-            start(self._widget.planner_edit.toPlainText())
+            start(self._widget.planner_edit.toPlainText(), self.namespace)
         except rospy.ROSException, rospy.ServiceException:
             rospy.logwarn('could not start planned trajectory')
 

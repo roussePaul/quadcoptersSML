@@ -63,5 +63,7 @@
 
     <!-- Planner Node -->
     <node pkg="quad_control" name="planner_Iris1" type="command_planner.py" output="screen"/>
+
+    <node pkg="rqt_gui" name="gui_Iris1" type="rqt_gui" args="-s tabbedGUI --args Iris1/"/>
     
 </launch>

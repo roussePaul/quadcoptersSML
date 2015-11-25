@@ -80,17 +80,20 @@ source ./devel/setup.bash
 rqt --standalone  tabbedGUI --args Iris1/
 ~~~~
 
-### With Mavros
+### With Mavros and One Quadcopter
 
-If you want to connect to an actual quadcopter, run the following two sequences, each in its own terminal window in the workspace root:
+If you want to connect to an actual quadcopter, run the following commands (the GUI is also started by the launch file):
 ~~~~
 source ./devel/setup.bash
 roslaunch quad_control single_quad_mavros.launch
 ~~~~
-and
+
+### With Mavros and Two Quadcopters
+
+To start the controller for two quads, run:
 ~~~~
 source ./devel/setup.bash
-rqt --standalone  tabbedGUI --args Iris1/
+roslaunch quad_control dual_quad_mavros.launch
 ~~~~
 
 ### Start Quadcopter
