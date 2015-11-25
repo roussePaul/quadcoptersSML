@@ -16,7 +16,7 @@ class TrajectoryQuintic(tj.Trajectory):
     """
 
 
-    def __init__(self, offset, rotation, final_point, initial_time, final_time):
+    def __init__(self, offset, rotation, initial_time, final_time, final_point):
         """Arguments:
         - offset (numpy array, 4)
         - rotation (numpy array, 3-by-3)
@@ -24,7 +24,7 @@ class TrajectoryQuintic(tj.Trajectory):
         - duration (float)
         """
         
-        tj.Trajectory.__init__(self, offset, rotation)
+        tj.Trajectory.__init__(self, offset, rotation, initial_time, final_time)
         
         t0 = initial_time
         q0 = numpy.zeros(4)
@@ -65,41 +65,16 @@ class TrajectoryQuintic(tj.Trajectory):
     def _get_untransformed_point(self, time):
 
         t = time
+        coeff = self.coeff
         
-        if t >= self.tf:
-
-            q = self.qf
-            dq = numpy.zeros(4)
-            ddq = numpy.zeros(4)
-            dddq = numpy.zeros(4)
-            sn = numpy.zeros(4)
-            cr = numpy.zeros(4)
-            
-            return q, dq, ddq, dddq, sn, cr
-        
-        elif t <= self.t0:
-        
-            q = self.q0
-            dq = numpy.zeros(4)
-            ddq = numpy.zeros(4)
-            dddq = numpy.zeros(4)
-            sn = numpy.zeros(4)
-            cr = numpy.zeros(4)
-            
-            return q, dq, ddq, dddq, sn, cr
-        
-        else:
-        
-            coeff = self.coeff
-            
-            q = numpy.kron(numpy.eye(4), numpy.array([1.0, t, t**2, t**3, t**4, t**5])).dot(coeff)
-            dq = numpy.kron(numpy.eye(4), numpy.array([0.0, 1.0, 2.0*t, 3.0*t**2, 4.0*t**3, 5.0*t**4])).dot(coeff)
-            ddq = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 2.0, 6.0*t, 12.0*t**2, 20.0*t**3])).dot(coeff)
-            dddq = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 6.0, 24.0*t, 60.0*t**2])).dot(coeff)
-            sn = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 0.0, 24.0, 120.0*t])).dot(coeff)
-            cr = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 0.0, 0.0, 120.0])).dot(coeff)
-        
-            return q, dq, ddq, dddq, sn, cr
+        q = numpy.kron(numpy.eye(4), numpy.array([1.0, t, t**2, t**3, t**4, t**5])).dot(coeff)
+        v = numpy.kron(numpy.eye(4), numpy.array([0.0, 1.0, 2.0*t, 3.0*t**2, 4.0*t**3, 5.0*t**4])).dot(coeff)
+        a = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 2.0, 6.0*t, 12.0*t**2, 20.0*t**3])).dot(coeff)
+        j = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 6.0, 24.0*t, 60.0*t**2])).dot(coeff)
+        sn = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 0.0, 24.0, 120.0*t])).dot(coeff)
+        cr = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 0.0, 0.0, 120.0])).dot(coeff)
+    
+        return q, v, a, j, sn, cr
         
         
 # test

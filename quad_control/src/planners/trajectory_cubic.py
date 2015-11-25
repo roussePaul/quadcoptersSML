@@ -16,7 +16,7 @@ class TrajectoryCubic(tj.Trajectory):
     """
 
 
-    def __init__(self, offset, rotation, final_point, initial_time, final_time):
+    def __init__(self, offset, rotation, initial_time, final_time, final_point):
         """Arguments:
         - offset (numpy array, 4)
         - rotation (numpy array, 3-by-3)
@@ -24,13 +24,11 @@ class TrajectoryCubic(tj.Trajectory):
         - duration (float)
         """
         
-        tj.Trajectory.__init__(self, offset, rotation)
+        tj.Trajectory.__init__(self, offset, rotation, initial_time, final_time)
         
-        t0 = initial_time
         q0 = numpy.zeros(4)
         dq0 = numpy.zeros(4)
         qf = numpy.array(final_point)
-        tf = final_time
         dqf = numpy.zeros(4)
 
         self.t0 = t0
@@ -58,43 +56,18 @@ class TrajectoryCubic(tj.Trajectory):
         
 
     def _get_untransformed_point(self, time):
-
-        t = time
         
-        if t >= self.tf:
-
-            q = self.qf
-            dq = numpy.zeros(4)
-            ddq = numpy.zeros(4)
-            dddq = numpy.zeros(4)
-            sn = numpy.zeros(4)
-            cr = numpy.zeros(4)
-            
-            return q, dq, ddq, dddq, sn, cr
+        t = self.time
+        coeff = self.coeff
         
-        elif t <= self.t0:
-        
-            q = self.q0
-            dq = numpy.zeros(4)
-            ddq = numpy.zeros(4)
-            dddq = numpy.zeros(4)
-            sn = numpy.zeros(4)
-            cr = numpy.zeros(4)
-            
-            return q, dq, ddq, dddq, sn, cr
-        
-        else:
-        
-            coeff = self.coeff
-            
-            q = numpy.kron(numpy.eye(4), numpy.array([1.0, t, t**2, t**3])).dot(coeff)
-            dq = numpy.kron(numpy.eye(4), numpy.array([0.0, 1.0, 2.0*t, 3.0*t**2])).dot(coeff)
-            ddq = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 2.0, 6.0*t])).dot(coeff)
-            dddq = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 6.0])).dot(coeff)
-            sn = numpy.zeros(4)
-            cr =numpy.zeros(4)
-        
-            return q, dq, ddq, dddq, sn, cr
+        p = numpy.kron(numpy.eye(4), numpy.array([1.0, t, t**2, t**3])).dot(coeff)
+        v = numpy.kron(numpy.eye(4), numpy.array([0.0, 1.0, 2.0*t, 3.0*t**2])).dot(coeff)
+        a = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 2.0, 6.0*t])).dot(coeff)
+        j = numpy.kron(numpy.eye(4), numpy.array([0.0, 0.0, 0.0, 6.0])).dot(coeff)
+        sn = numpy.zeros(4)
+        cr =numpy.zeros(4)
+    
+        return p, v, a, j, sn, cr
         
         
 # test

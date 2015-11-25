@@ -25,6 +25,7 @@ import numpy
 
 import trajectory_msgs.msg as tm
 import geometry_msgs.msg as gm
+import nav_msgs.msg as nm
 
 import planners.trajectory_circle as ct
 import planners.trajectory_cubic as cbt
@@ -35,7 +36,7 @@ import tf.transformations as tft
 
 
 
-class RotorSPlannerNode():
+class RotorSFollowerPlannerNode():
 
     def __init__(self):
         pass
@@ -94,7 +95,25 @@ class RotorSPlannerNode():
         yaw = euler_angles[2]
         
         return numpy.array([x, y, z, yaw])
+        
+       
+    def odometry_to_leader_state(self, msg):
+        """This function converts a message of type geomtry_msgs.Odometry into
+        position and velocity (including yaw) of the leader, in the form of
+        numpy arrays.
+        """
     
+        aux1 = msg.pose.pose.position
+        aux2 = msg.pose.pose.orientation
+        quaternion = numpy.array([aux2.x, aux2.y, aux2.z, aux2.w])
+        ea = tft.euler_from_quaternion(quaternion)
+        yaw = ea[2]
+        self.leader_position = numpy.array([aux1.x, aux1.y, aux1.z, yaw])
+        aux3 = msg.twist.twist.linear
+        aux4 = msg.twist.twist.angular
+        self.leader_velocity = numpy.array([aux3.x, aux3.y, aux3.z, aux4.z])
+        self.got_leader_state_flag = True
+        
     
     def get_quad_initial_pose(self, msg):
         """This is called only once to get the initial position of the quad, in
@@ -104,24 +123,31 @@ class RotorSPlannerNode():
         """
         
         self.quad_initial_pose = self.pose_stamped_to_reference_position(msg)
-        self.sub.unregister()
+        self.follower_pose_subscriber.unregister()
         self.got_quad_initial_pose_flag = True
     
 
     def work(self):
 
         # initialize node
-        rospy.init_node('rotors_planner_node')
+        rospy.init_node('rotors_follower_planner_node')
         
         # instantiate the publisher
-        topic = rospy.get_param('reference_trajectory_topic', default='command/trajectory')
+        topic = rospy.get_param('follower_reference_trajectory_topic', default='command/trajectory')
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
         # to get the initial position of the quad
         self.quad_initial_pose = None
         self.got_quad_initial_pose_flag = False
-        topic = rospy.get_param('quad_pose_topic', default='ground_truth/pose')
-        self.sub = rospy.Subscriber(topic, gm.PoseStamped, self.get_quad_initial_pose)
+        topic = rospy.get_param('follower_pose_topic', default='ground_truth/pose')
+        self.follower_pose_subscriber = rospy.Subscriber(topic, gm.PoseStamped, self.get_quad_initial_pose)
+
+        # subscriber to the position of the leader
+        topic = rospy.get_param('leader_state_topic', default='/hummingbird_leader/ground_truth/odometry')
+        self.leader_position = None
+        self.leader_velocity = None
+        self.got_leader_state_flag= False
+        self.leader_state_subscriber = rospy.Subscriber(topic, nm.Odometry, self.odometry_to_leader_state)
 
         # setting the frequency of execution
         rate = rospy.Rate(1e1)
@@ -136,24 +162,12 @@ class RotorSPlannerNode():
         #print(type(self.initial_time))
 
         # get initial quad position
-        while not self.got_quad_initial_pose_flag:
+        while not self.got_leader_state_flag:
             rate.sleep()
 
-        # trajectory to be published
-        #trajectory = ct.TrajectoryCircle([0.0, 0.0, 1.0, numpy.pi], numpy.eye(3), 2.0, 0.3)
-        #self.trajectory = cbt.TrajectoryCubic([0.0, 0.0, 1.0, 0.0], numpy.eye(3), [2.0, -2.0, 1.0, 0.0], 10.0, 15.0)
-        #self.trajectory = qt.TrajectoryQuintic([0.0, 0.0, 1.0, 0.0], numpy.eye(3), [2.0, -2.0, 1.0, 0.0], 5.0, 10.0)
-        displacement = rospy.get_param('displacement', default=[0.0, 0.0, 1.0, 0.0])
-        #delay = rospy.get_param('delay', default=0.0)
-        #duration = rospy.get_param('duration', default=numpy.linalg.norm(displacement))
-        #self.trajectory = qt.TrajectoryQuintic(self.quad_initial_pose, numpy.eye(3), delay, delay+duration, displacement)
-        radius = 3.0
-        ang_vel = 0.2
-        start_point = numpy.array(self.quad_initial_pose)
-        start_point[2] = 1.0
-        duration = 10000.0
-        delay = 10.0
-        self.trajectory = ct.TrajectoryCircle(start_point, numpy.eye(3), delay, delay+duration, radius, ang_vel)
+        # desired offset with respect to the leader
+        self.offset = numpy.array([2.0, 2.0, 0.0, 0.0])
+        #self.trajectory = ct.TrajectoryCircle(self.quad_initial_pose, numpy.eye(3), delay, delay+duration, radius, ang_vel)
 
         # do work
         while not rospy.is_shutdown():
@@ -161,9 +175,14 @@ class RotorSPlannerNode():
             self.time = rospy.get_time() - self.initial_time
             #print(self.time)
             #print(self.initial_time)
-            p, v, a, j, s, c = self.trajectory.get_point(self.time)
+            p = self.leader_position + self.offset
+            v = self.leader_velocity
+            a = numpy.zeros(4)
+            j = numpy.zeros(4)
+            sn = numpy.zeros(4)
+            cr = numpy.zeros(4)
             #print(p)
-            msg = self.trajectory_to_multi_dof_joint_trajectory(p, v, a, j, s, c)
+            msg = self.trajectory_to_multi_dof_joint_trajectory(p, v, a, j, sn, cr)
             pub.publish(msg)
             rate.sleep()
 
@@ -171,6 +190,6 @@ class RotorSPlannerNode():
 
 
 if __name__ == '__main__':
-    node = RotorSPlannerNode()
+    node = RotorSFollowerPlannerNode()
     node.work()
     

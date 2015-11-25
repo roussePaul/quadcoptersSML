@@ -11,9 +11,9 @@
     <!-- <arg name="gui" value="false"/> -->
   </include>
 
-  <group ns="hummingbird_brad">
+  <group ns="hummingbird_leader">
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
-      <arg name="mav_name" value="hummingbird_brad" />
+      <arg name="mav_name" value="hummingbird_leader" />
       <arg name="model" value="$(find rotors_description)/urdf/hummingbird_generic_odometry_sensor.gazebo" />
       <arg name="enable_logging" value="$(arg enable_logging)" />
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
@@ -31,9 +31,9 @@
     <!--node name="waypoint_publisher" pkg="rotors_gazebo" type="waypoint_publisher" output="screen" args="-1 -1 1 0 5"/-->
   </group>
 
-  <group ns="hummingbird_janet">
+  <group ns="hummingbird_follower">
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
-      <arg name="mav_name" value="hummingbird_janet" />
+      <arg name="mav_name" value="hummingbird_follower" />
       <arg name="model" value="$(find rotors_description)/urdf/hummingbird_generic_odometry_sensor.gazebo" />
       <arg name="enable_logging" value="$(arg enable_logging)" />
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />

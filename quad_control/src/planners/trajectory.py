@@ -16,10 +16,11 @@ class Trajectory:
     """Abstract class for a generic trajectory"""
 
 
-    def __init__(self, offset, rotation):
+    def __init__(self, offset, rotation, initial_time, final_time):
         self.offset = numpy.array(offset)
         self.rotation = numpy.array(rotation)
-
+        self.t0 = initial_time
+        self.tf = final_time
 
     def _get_untransformed_point(self, time):
         """The actual trajectory is given here.
@@ -69,7 +70,12 @@ class Trajectory:
         This is the method that the planner nodes call.
         """
         
-        p, v, a, j, sn, cr = self._get_untransformed_point(time)
+        if time < self.t0:
+            p, v, a, j, sn, cr = self._get_untransformed_point(0.0)
+        elif time > self.tf:
+            p, v, a, j, sn, cr = self._get_untransformed_point(self.tf-self.t0)
+        else:
+            p, v, a, j, sn, cr = self._get_untransformed_point(time-self.t0)
         
         return self._add_offset_and_rotation(p, v, a, j, sn, cr)
         

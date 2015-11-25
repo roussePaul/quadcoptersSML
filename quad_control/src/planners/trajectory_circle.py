@@ -10,7 +10,7 @@ class TrajectoryCircle(tj.Trajectory):
     """Circle trajectory."""
 
 
-    def __init__(self, offset, rotation, radius, angular_velocity):
+    def __init__(self, offset, rotation, initial_time, final_time, radius, angular_velocity):
         """Arguments:
         - offset (numpy array, 4)
         - rotation (numpy array, 3-by-3)
@@ -18,7 +18,7 @@ class TrajectoryCircle(tj.Trajectory):
         - angular_velocity (float)
         """
         
-        tj.Trajectory.__init__(self, offset, rotation)
+        tj.Trajectory.__init__(self, offset, rotation, initial_time, final_time)
         self.radius = radius
         self.angular_velocity = angular_velocity
 
@@ -38,7 +38,7 @@ class TrajectoryCircle(tj.Trajectory):
         sn = numpy.zeros(4)
         cr = numpy.zeros(4)
 
-        p[0:3] = r * w**0 * numpy.array([c(w * t), -s(w * t), 0.0])
+        p[0:3] = r*(numpy.array([c(w * t), -s(w * t), 0.0])-numpy.array([1.0, 0.0, 0.0]))
         v[0:3] = r * w**1 * numpy.array([-s(w * t), -c(w * t), 0.0])
         a[0:3] = r * w**2 * numpy.array([-c(w * t), s(w * t), 0.0])
         j[0:3] = r * w**3 * numpy.array([s(w * t), c(w * t), 0.0])

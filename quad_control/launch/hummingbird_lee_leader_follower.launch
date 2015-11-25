@@ -11,13 +11,13 @@
     <!-- <arg name="gui" value="false"/> -->
   </include>
 
-  <group ns="hummingbird_brad">
+  <group ns="hummingbird_leader">
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
-      <arg name="mav_name" value="hummingbird_brad" />
+      <arg name="mav_name" value="hummingbird_leader" />
       <arg name="model" value="$(find rotors_description)/urdf/hummingbird_generic_odometry_sensor.gazebo" />
       <arg name="enable_logging" value="$(arg enable_logging)" />
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
-      <arg name="log_file" value="hummingbird_brad"/>
+      <arg name="log_file" value="hummingbird"/>
       <arg name="x" value="-1.0"/>
       <arg name="y" value="-1.0"/>
     </include>
@@ -29,15 +29,16 @@
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
     <!--node name="waypoint_publisher" pkg="rotors_gazebo" type="waypoint_publisher" output="screen" args="-1 -1 1 0 5"/-->
+    <node name="rotors_planner_node" pkg="quad_control" type="rotors_planner_node.py"/>
   </group>
 
-  <group ns="hummingbird_janet">
+  <group ns="hummingbird_follower">
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
-      <arg name="mav_name" value="hummingbird_janet" />
+      <arg name="mav_name" value="hummingbird_follower" />
       <arg name="model" value="$(find rotors_description)/urdf/hummingbird_generic_odometry_sensor.gazebo" />
       <arg name="enable_logging" value="$(arg enable_logging)" />
       <arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
-      <arg name="log_file" value="hummingbird_janet"/>
+      <arg name="log_file" value="hummingbird"/>
       <arg name="x" value="1.0"/>
       <arg name="y" value="1.0"/>
     </include>
@@ -49,6 +50,7 @@
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
     <!-- node name="waypoint_publisher" pkg="rotors_gazebo" type="waypoint_publisher" output="screen" args="1 1 1 0 5"/-->
+    <node name="rotors_follower_planner_node" pkg="quad_control" type="rotors_follower_planner_node.py"/>
   </group>
   
 </launch>
