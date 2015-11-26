@@ -29,6 +29,7 @@ import nav_msgs.msg as nm
 import planners.trajectory_circle as ct
 import planners.trajectory_cubic as cbt
 import planners.trajectory_quintic as qt
+import planners.collision_avoidance_planner as cap
 
 import tf.transformations as tft
 
@@ -132,20 +133,9 @@ class RotorSFollowerPlannerNode():
         This callback kills the subcriber object herself at the end of the call.
         """
         
-        self.quad_pose = self._pose_stamped_to_reference_position(msg)
+        self.quad_pos = self._pose_stamped_to_reference_position(msg)
         #self.follower_pose_subscriber.unregister()
-        self.got_quad_initial_pose_flag = True
-    
-    
-    def _collision_avoidance_drive(self, lp, fp):
-        cog = 10.0
-        ths = 1.0
-        dist = numpy.linalg.norm(lp-fp)
-        if dist < ths:
-            acc = -cog*(1.0/dist - 1.0/ths)*(lp-fp)/dist
-        else:
-            acc = numpy.zeros(3)
-        return acc
+        self.got_quad_initial_pos_flag = True
     
 
     def work(self):
@@ -153,13 +143,18 @@ class RotorSFollowerPlannerNode():
         # initialize node
         rospy.init_node('rotors_collision_avoidance_follower_planner_node')
         
+        # planner to compute the collision avoidance contributions
+        ca_gain = 10.0
+        ca_ths = 1.0
+        self.collision_avoidance_planner = cap.CollisionAvoidancePlanner(ca_gain, ca_ths)
+        
         # instantiate the publisher
         topic = rospy.get_param('follower_reference_trajectory_topic', default='command/trajectory')
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
         # to get the initial position of the quad
-        self.quad_pose = None
-        self.got_quad_initial_pose_flag = False
+        self.quad_pos = None
+        self.got_quad_initial_pos_flag = False
         topic = rospy.get_param('follower_pose_topic', default='ground_truth/pose')
         self.follower_pose_subscriber = rospy.Subscriber(topic, gm.PoseStamped, self._get_quad_pose)
 
@@ -169,10 +164,11 @@ class RotorSFollowerPlannerNode():
         self.leader_state_subscriber = rospy.Subscriber(topic, nm.Odometry, self._get_leader_state)
 
         # setting the frequency of execution
-        rate = rospy.Rate(1e1)
+        freq = 1e1
+        rate = rospy.Rate(freq)
 
         # get initial quad position
-        while not self.got_leader_state_flag or not self.got_quad_initial_pose_flag:
+        while not self.got_leader_state_flag or not self.got_quad_initial_pos_flag:
             rate.sleep()
 
         # desired offset with respect to the leader
@@ -182,9 +178,11 @@ class RotorSFollowerPlannerNode():
         # do work
         while not rospy.is_shutdown():
 
-            p = self.lead_pos + self.offset
-            v = self.lead_vel
-            a = numpy.concatenate([self._collision_avoidance_drive(self.lead_pos[0:2], self.quad_pose[0:2]), numpy.zeros(1)])
+            ca_displ, ca_vel, ca_acc = self.collision_avoidance_planner.get_collision_avoidance_drive(self.quad_pos, self.lead_pos, 1.0/freq)
+
+            p = self.lead_pos + self.offset + ca_displ
+            v = self.lead_vel + ca_vel
+            a = ca_acc
             j = numpy.zeros(4)
             sn = numpy.zeros(4)
             cr = numpy.zeros(4)
