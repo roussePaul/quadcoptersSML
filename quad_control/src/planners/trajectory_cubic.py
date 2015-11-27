@@ -31,10 +31,8 @@ class TrajectoryCubic(tj.Trajectory):
         qf = numpy.array(final_point) - numpy.array(offset)
         dqf = numpy.zeros(4)
 
-        self.t0 = t0
-        self.q0 = q0
-        self.tf = tf
-        self.qf = qf
+        t0 = 0.0
+        tf = final_time-initial_time
 
         # compute polynomial coefficients
         
@@ -60,7 +58,7 @@ class TrajectoryCubic(tj.Trajectory):
 
     def _get_untransformed_point(self, time):
         
-        t = self.time
+        t = time
         coeff = self.coeff
         
         p = numpy.kron(numpy.eye(4), numpy.array([1.0, t, t**2, t**3])).dot(coeff)

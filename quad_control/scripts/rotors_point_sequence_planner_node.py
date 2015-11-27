@@ -27,10 +27,12 @@ import random
 
 import trajectory_msgs.msg as tm
 import geometry_msgs.msg as gm
+import nav_msgs.msg as nm
 
 import planners.trajectory_circle as ct
 import planners.trajectory_cubic as cbt
 import planners.trajectory_quintic as qt
+import planners.planner_to_goal as ptg
 
 import tf.transformations as tft
 
@@ -76,61 +78,71 @@ class RotorSPointSequencePlannerNode():
         acceleration.linear.x = a[0]
         acceleration.linear.y = a[1]
         acceleration.linear.z = a[2]
+        acceleration.angular.z = a[3]
         point.accelerations.append(acceleration)
 
         return msg
 
+
+    def _odometry_to_pos_vel(self, msg):
+        """This function converts a message of type geomtry_msgs.Odometry into
+        position and velocity of the quad as 4D numpy arrays.
+        """
     
-    def _pose_stamped_to_reference_position(self, msg):
-        """This function converts a message of type geometry_msgs.PoseStamped
-        into a numpy array containing the position (including yaw) of the quad.
+        aux1 = msg.pose.pose.position
+        aux2 = msg.pose.pose.orientation
+        quaternion = numpy.array([aux2.x, aux2.y, aux2.z, aux2.w])
+        ea = tft.euler_from_quaternion(quaternion)
+        yaw = ea[2]
+        pos = numpy.array([aux1.x, aux1.y, aux1.z, yaw])
+        aux3 = msg.twist.twist.linear
+        aux4 = msg.twist.twist.angular
+        vel = numpy.array([aux3.x, aux3.y, aux3.z, aux4.z])
+
+        return pos, vel
+        
+     
+    def _get_quad_pos_vel(self, msg):
+        """Callback to save the position and velocity of the quad into
+        object properties.
         """
         
-        x = msg.pose.position.x
-        y = msg.pose.position.y
-        z = msg.pose.position.z
-        
-        aux = msg.pose.orientation
-        quaternion = numpy.array([aux.x, aux.y, aux.z, aux.w])
-        euler_angles = tft.euler_from_quaternion(quaternion)
-        yaw = euler_angles[2]
-        
-        return numpy.array([x, y, z, yaw])
-    
-    
-    def _get_quad_pose(self, msg):
-        """This is the callback used to get the position of the quad."""
-        
-        self.quad_pose = self._pose_stamped_to_reference_position(msg)
-        self.got_quad_initial_pose_flag = True
+        self._pos, self._vel = self._odometry_to_pos_vel(msg)
+        self._got_initial_pos_vel_flag = True
     
     
     def _generate_initial_waypoint(self):
-        if self.quad_pose[2] < 1.0:
-            self.waypoint = numpy.array(self.quad_pose)
+        if self._pos[2] < 1.0:
+            self.waypoint = numpy.array(self._pos)
             self.waypoint[2] = 1.0
-            duration = 2.5*numpy.linalg.norm(self.waypoint-self.quad_pose)
-            time = rospy.get_time() - self.initial_time
-            delay = rospy.get_param('delay', default=1.0)
-            self.trajectory = qt.TrajectoryQuintic(self.quad_pose, numpy.eye(3), delay+time, delay+time+duration, self.waypoint)
+            #duration = 2.5*numpy.linalg.norm(self.waypoint-self.quad_pose)
+            #time = rospy.get_time() - self.initial_time
+            #delay = rospy.get_param('delay', default=1.0)
+            #self.trajectory = qt.TrajectoryQuintic(self.quad_pose, numpy.eye(3), delay+time, delay+time+duration, self.waypoint)
+            gain_pos = 3.0
+            gain_vel = 3.0
+            self.trajectory = ptg.PlannerToGoal(self.waypoint, gain_pos, gain_vel)
         else:
             self._generate_waypoint()
 
 
     def _generate_waypoint(self):
-        self.waypoint = numpy.array(self.quad_pose)
-        distance = numpy.linalg.norm(self.waypoint-self.quad_pose)
+        self.waypoint = numpy.array(self._pos)
+        distance = numpy.linalg.norm(self.waypoint-self._pos)
         while distance < 0.1:
             x = random.uniform(-1.5, 1.5)
             y = random.uniform(-1.5, 1.5)
             z = random.uniform(1.0, 2.5)
             yaw = random.uniform(-numpy.pi, numpy.pi)
             self.waypoint = numpy.array([x, y, z, yaw])
-            distance = numpy.linalg.norm(self.waypoint-self.quad_pose)
-        duration = 2.0*numpy.linalg.norm(self.waypoint-self.quad_pose)
-        time = rospy.get_time() - self.initial_time
-        delay = rospy.get_param('delay', default=1.0)
-        self.trajectory = qt.TrajectoryQuintic(self.quad_pose, numpy.eye(3), delay+time, delay+time+duration, self.waypoint)
+            distance = numpy.linalg.norm(self.waypoint-self._pos)
+        #duration = 2.0*numpy.linalg.norm(self.waypoint-self.quad_pose)
+        #time = rospy.get_time() - self.initial_time
+        #delay = rospy.get_param('delay', default=1.0)
+        #self.trajectory = qt.TrajectoryQuintic(self.quad_pose, numpy.eye(3), delay+time, delay+time+duration, self.waypoint)
+        gain_pos = 3.0
+        gain_vel = 3.0
+        self.trajectory = ptg.PlannerToGoal(self.waypoint, gain_pos, gain_vel)
 
 
     def work(self):
@@ -143,29 +155,31 @@ class RotorSPointSequencePlannerNode():
         self.time = rospy.get_time() - initial_time
         
         # instantiate the publisher
-        topic = rospy.get_param('reference_trajectory_topic', default='command/trajectory')
+        topic = rospy.get_param('ref_traj_topic', default='/hummingbird/command/trajectory')
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
         # to get the pose of the quad
-        self.quad_pose = None
-        self.got_quad_initial_pose_flag = False
-        topic = rospy.get_param('quad_pose_topic', default='ground_truth/pose')
-        self.sub = rospy.Subscriber(topic, gm.PoseStamped, self._get_quad_pose)
+        self._pos = None
+        self._vel = None
+        self._got_initial_pos_vel_flag = False
+        topic = rospy.get_param('quad_pos_topic', default='/hummingbird/ground_truth/odometry')
+        rospy.Subscriber(topic, nm.Odometry, self._get_quad_pos_vel)
 
         # setting the frequency of execution
         rate = rospy.Rate(1e1)
 
         # get initial time
-        aux = rospy.get_time()
-        while rospy.get_time() == aux:
-            pass
-        self.initial_time = rospy.get_time()
-        self.time = rospy.get_time() - self.initial_time
+        #aux = rospy.get_time()
+        #while rospy.get_time() == aux:
+        #    pass
+        #self.initial_time = rospy.get_time()
+        #self.time = rospy.get_time() - self.initial_time
         #print(self.time)
         #print(type(self.initial_time))
 
         # get initial quad position
-        while not self.got_quad_initial_pose_flag:
+        while not self._got_initial_pos_vel_flag:
+            print("Waiting for the first measurement!")
             rate.sleep()
 
         # generate initial waypoint
@@ -175,19 +189,28 @@ class RotorSPointSequencePlannerNode():
         while not rospy.is_shutdown():
 
             # get current time
-            self.time = rospy.get_time() - self.initial_time
-            print(self.time)
+            #self.time = rospy.get_time() - self.initial_time
+            #print(self.time)
             
             # see if the current waypoint is reached
-            print self.quad_pose
+            print self._pos
             print self.waypoint
-            print numpy.linalg.norm(self.quad_pose-self.waypoint)
+            print numpy.linalg.norm(self._pos-self.waypoint)
             
-            if numpy.linalg.norm(self.quad_pose-self.waypoint) < 0.5:
+            if numpy.linalg.norm(self._pos-self.waypoint) < 0.2:
                 self._generate_waypoint()
+                print("\nNew waypoint!!!\n")
                 
-            p, v, a, j, s, c = self.trajectory.get_point(self.time)
-            msg = self._trajectory_to_multi_dof_joint_trajectory(p, v, a, j, s, c)
+            #p, v, a, j, s, c = self.trajectory.get_point(self.time)
+            a = self.trajectory.get_acceleration(self._pos, self._vel)
+            v = numpy.array(self._vel)
+            aux = self.trajectory.get_velocity(self._pos)
+            v[3] = aux[3]
+            p = numpy.array(self._pos)
+            j = numpy.zeros(4)
+            sn = numpy.zeros(4)
+            cr = numpy.zeros(4)
+            msg = self._trajectory_to_multi_dof_joint_trajectory(p, v, a, j, sn, cr)
             
             pub.publish(msg)
             rate.sleep()

@@ -11,7 +11,7 @@
     <!-- <arg name="gui" value="false"/> -->
   </include>
 
-  <group ns="hummingbird_brad">
+  <group ns="hummingbird_1">
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
       <arg name="mav_name" value="hummingbird_brad" />
       <arg name="model" value="$(find rotors_description)/urdf/hummingbird_generic_odometry_sensor.gazebo" />
@@ -31,7 +31,7 @@
     <!--node name="waypoint_publisher" pkg="rotors_gazebo" type="waypoint_publisher" output="screen" args="-1 -1 1 0 5"/-->
   </group>
 
-  <group ns="hummingbird_janet">
+  <group ns="hummingbird_2">
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
       <arg name="mav_name" value="hummingbird_janet" />
       <arg name="model" value="$(find rotors_description)/urdf/hummingbird_generic_odometry_sensor.gazebo" />

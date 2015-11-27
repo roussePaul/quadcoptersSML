@@ -4,6 +4,8 @@
   <arg name="enable_ground_truth" default="true"/>
   <arg name="paused" value="false"/>
 
+  
+
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find rotors_gazebo)/worlds/basic.world"/>
     <!-- <arg name="debug" value="true"/> -->
@@ -29,9 +31,7 @@
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
     <!--node name="waypoint_publisher" pkg="rotors_gazebo" type="waypoint_publisher" output="screen" args="-1 -1 1 0 5"/-->
-    <node name="rotors_collision_avoidance_point_sequence_planner_node" pkg="quad_control" type="rotors_collision_avoidance_point_sequence_planner_node.py">
-      <param name="other_pos_topic" value="/hummingbird_2/ground_truth/pose"/>
-    </node>
+    <node name="planner_1" pkg="quad_control" type="rotors_collision_avoidance_point_sequence_planner_node.py"/>
   </group>
 
   <group ns="hummingbird_2">
@@ -52,7 +52,7 @@
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
     <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
     <!-- node name="waypoint_publisher" pkg="rotors_gazebo" type="waypoint_publisher" output="screen" args="1 1 1 0 5"/-->
-    <node name="rotors_collision_avoidance_point_sequence_planner_node" pkg="quad_control" type="rotors_collision_avoidance_point_sequence_planner_node.py" output="screen"/>
+    <node name="planner_2" pkg="quad_control" type="rotors_collision_avoidance_point_sequence_planner_node.py"/>
   </group>
-  
+
 </launch>

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """In this file, a ROS node that publishes a trajectory is started.
-The trajectory is planned by copying the trajectory of a leader quad, adding
-a constant offset and a conrtibution on acceleration for collision avoidance.
+The trajectory is planned by an object of type PlannerToGoal from this package.
 The trajectory is published in the form of a ROS message of the type
 'MultiDOFJointTrajectory', and a description can be found at this link.
 
@@ -26,17 +25,14 @@ import trajectory_msgs.msg as tm
 import geometry_msgs.msg as gm
 import nav_msgs.msg as nm
 
-import planners.trajectory_circle as ct
-import planners.trajectory_cubic as cbt
-import planners.trajectory_quintic as qt
-import planners.collision_avoidance_planner as cap
+import planners.planner_to_goal as ptg
 
 import tf.transformations as tft
 
 
 
 
-class RotorSFollowerPlannerNode():
+class RotorSToGoalPlannerNode():
 
     def __init__(self):
         pass
@@ -75,6 +71,7 @@ class RotorSFollowerPlannerNode():
         acceleration.linear.x = a[0]
         acceleration.linear.y = a[1]
         acceleration.linear.z = a[2]
+        acceleration.angular.z = a[3]
         point.accelerations.append(acceleration)
 
         return msg
@@ -97,12 +94,9 @@ class RotorSFollowerPlannerNode():
         return numpy.array([x, y, z, yaw])
         
        
-    def _odometry_to_reference_point(self, msg):
-        """This function converts a message of type geomtry_msgs.Odometry into a
-        reference point. The reference point inclues pos, vel, acc, jerk, snap
-        and crackle, all in 4D (that is, including x, y z, and yaw) in the form
-        of numpy arrays.
-        Derivstives further than vel are set to zero.
+    def _odometry_to_pos_vel(self, msg):
+        """This function converts a message of type geomtry_msgs.Odometry into
+        position and velocity of the quad as 4D numpy arrays.
         """
     
         aux1 = msg.pose.pose.position
@@ -114,28 +108,17 @@ class RotorSFollowerPlannerNode():
         aux3 = msg.twist.twist.linear
         aux4 = msg.twist.twist.angular
         vel = numpy.array([aux3.x, aux3.y, aux3.z, aux4.z])
-        acc = numpy.zeros(4)
-        jerk = numpy.zeros(4)
-        snap = numpy.zeros(4)
-        crackle = numpy.zeros(4)
-        return pos, vel, acc, jerk, snap, crackle
+
+        return pos, vel
         
      
-    def _get_leader_state(self, msg):
-        self.lead_pos, self.lead_vel, self.lead_acc, self.lead_jrk, self.lead_snp, self.lead_crk = self._odometry_to_reference_point(msg)
-        self.got_leader_state_flag = True
-        
-    
-    def _get_quad_pose(self, msg):
-        """This is called only once to get the initial position of the quad, in
-        case one wants to use it as the starting point for the reference
-        trajectory.
-        This callback kills the subcriber object herself at the end of the call.
+    def _get_quad_pos_vel(self, msg):
+        """Callback to save the position and velocity of the quad into
+        object properties.
         """
         
-        self.quad_pos = self._pose_stamped_to_reference_position(msg)
-        #self.follower_pose_subscriber.unregister()
-        self.got_quad_initial_pos_flag = True
+        self._pos, self._vel = self._odometry_to_pos_vel(msg)
+        self._got_initial_pos_vel_flag = True
     
 
     def work(self):
@@ -143,51 +126,47 @@ class RotorSFollowerPlannerNode():
         # initialize node
         rospy.init_node('rotors_collision_avoidance_follower_planner_node')
         
-        # planner to compute the collision avoidance contributions
-        ca_gain = 10.0
-        ca_ths = 1.0
-        self.collision_avoidance_planner = cap.CollisionAvoidancePlanner(ca_gain, ca_ths)
+         # setting the frequency of execution
+        freq = 1e2
+        rate = rospy.Rate(freq)
+        
+        # planner
+        gain_pos = rospy.get_param('gain_pos', default=1.0)
+        gain_vel = rospy.get_param('gain_vel', default=1.0)
+        goal_point = rospy.get_param('goal_point', default=[-2.0, 0.0, 1.5, 2.0])
+        self._planner = ptg.PlannerToGoal(goal_point, gain_pos, gain_vel)
         
         # instantiate the publisher
-        topic = rospy.get_param('follower_reference_trajectory_topic', default='command/trajectory')
+        topic = rospy.get_param('ref_traj_topic', default='hummingbird/command/trajectory')
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
-        # to get the initial position of the quad
-        self.quad_pos = None
-        self.got_quad_initial_pos_flag = False
-        topic = rospy.get_param('follower_pose_topic', default='ground_truth/pose')
-        self.follower_pose_subscriber = rospy.Subscriber(topic, gm.PoseStamped, self._get_quad_pose)
-
-        # subscriber to the position of the leader
-        topic = rospy.get_param('leader_state_topic', default='/hummingbird_leader/ground_truth/odometry')
-        self.got_leader_state_flag = False
-        self.leader_state_subscriber = rospy.Subscriber(topic, nm.Odometry, self._get_leader_state)
-
-        # setting the frequency of execution
-        freq = 1e1
-        rate = rospy.Rate(freq)
+        # subscriber to position and velocity
+        topic = rospy.get_param('pos_vel_topic', default='hummingbird/ground_truth/odometry')
+        self._got_initial_pos_vel_flag = False
+        rospy.Subscriber(topic, nm.Odometry, self._get_quad_pos_vel)
 
         # get initial quad position
-        while not self.got_leader_state_flag or not self.got_quad_initial_pos_flag:
+        while not self._got_initial_pos_vel_flag:
             rate.sleep()
-
-        # desired offset with respect to the leader
-        self.offset = numpy.array([1.0, 0.0, 0.0, 0.0])
-        #self.trajectory = ct.TrajectoryCircle(self.quad_initial_pose, numpy.eye(3), delay, delay+duration, radius, ang_vel)
 
         # do work
         while not rospy.is_shutdown():
-
-            ca_displ, ca_vel, ca_acc = self.collision_avoidance_planner.get_collision_avoidance_drive(self.quad_pos, self.lead_pos, 1.0/freq)
-
-            p = self.lead_pos + self.offset + ca_displ
-            v = self.lead_vel + ca_vel
-            a = ca_acc
+            
+            vel = numpy.array(self._vel)
+            pos = numpy.array(self._pos)
+            
+            acc = self._planner.get_acceleration(pos, vel)
+            
+            aux = self._planner.get_velocity(pos)
+            vel[2] = aux[2]
+            
             j = numpy.zeros(4)
             sn = numpy.zeros(4)
             cr = numpy.zeros(4)
-            #print(p)
-            msg = self._trajectory_to_multi_dof_joint_trajectory(p, v, a, j, sn, cr)
+
+            print(numpy.linalg.norm(pos-self._planner._goal_point))
+
+            msg = self._trajectory_to_multi_dof_joint_trajectory(pos, vel, acc, j, sn, cr)
             pub.publish(msg)
             rate.sleep()
 
@@ -195,6 +174,6 @@ class RotorSFollowerPlannerNode():
 
 
 if __name__ == '__main__':
-    node = RotorSFollowerPlannerNode()
+    node = RotorSToGoalPlannerNode()
     node.work()
     
