@@ -75,23 +75,6 @@ class RotorSToGoalPlannerNode():
         point.accelerations.append(acceleration)
 
         return msg
-
-    
-    def _pose_stamped_to_reference_position(self, msg):
-        """This function converts a message of type geometry_msgs.PoseStamped
-        into a numpy array containing the position (including yaw) of the quad.
-        """
-        
-        x = msg.pose.position.x
-        y = msg.pose.position.y
-        z = msg.pose.position.z
-        
-        aux = msg.pose.orientation
-        quaternion = numpy.array([aux.x, aux.y, aux.z, aux.w])
-        euler_angles = tft.euler_from_quaternion(quaternion)
-        yaw = euler_angles[2]
-        
-        return numpy.array([x, y, z, yaw])
         
        
     def _odometry_to_pos_vel(self, msg):

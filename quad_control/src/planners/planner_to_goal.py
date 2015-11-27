@@ -55,7 +55,10 @@ class PlannerToGoal:
         ps = self._goal_point
         p = quad_pos
         
-        vel = kp*(ps-p)
-        vel = self._saturate(vel, 1.0)
+        vel = 0.2*kp*(ps-p)
+        vel = self._saturate(vel, 0.2)
         
         return vel
+        
+        
+       
