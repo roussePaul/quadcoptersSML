@@ -123,7 +123,7 @@ class RotorSFollowerPlannerNode():
             #time = rospy.get_time() - self.initial_time
             #delay = rospy.get_param('delay', default=1.0)
             #self._roaming_planner = cbt.TrajectoryCubic(self._pos, numpy.eye(3), delay+time, delay+time+duration, self._waypoint)
-            self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 1.0)
+            self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 3.0)
         else:
             self._generate_waypoint()
 
@@ -143,7 +143,7 @@ class RotorSFollowerPlannerNode():
         #time = rospy.get_time() - self.initial_time
         #delay = rospy.get_param('delay', default=1.0)
         #self._roaming_planner = cbt.TrajectoryCubic(self._pos, numpy.eye(3), delay+time, delay+time+duration, self._waypoint)
-        self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 1.0)
+        self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 3.0)
 
 
 
@@ -153,8 +153,8 @@ class RotorSFollowerPlannerNode():
         rospy.init_node('rotors_collision_avoidance_point_sequence_planner_node')
         
         # planner to compute the collision avoidance contributions
-        gain = 4.0
-        ths = 4.0
+        gain = 5.0
+        ths = 3.0
         self._collision_avoidance_planner = pca.PlannerCollisionAvoidance(gain, ths)
         
         # planner to roam around
@@ -162,14 +162,14 @@ class RotorSFollowerPlannerNode():
         self._roaming_planner = None
         
         # instantiate the publisher
-        topic = rospy.get_param('ref_traj_topic', default='/hummingbird_2/command/trajectory')
+        topic = rospy.get_param('ref_traj_topic', default='command/trajectory')
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
         # to get the initial position of the quad
         self._pos = None
         self._vel = None
         self._got_initial_pos_vel_flag = False
-        topic = rospy.get_param('quad_pos_vel_topic', default='/hummingbird_2/ground_truth/odometry')
+        topic = rospy.get_param('quad_pos_vel_topic', default='ground_truth/odometry')
         self._pos_subscriber = rospy.Subscriber(topic, nm.Odometry, self._get_quad_pos_vel)
 
         # subscriber to the position of the leader
@@ -207,7 +207,7 @@ class RotorSFollowerPlannerNode():
         while not rospy.is_shutdown():
 
             # compute collision avoidance contribution
-            ca_acc = self._collision_avoidance_planner.get_acceleration(self._pos, self._other_pos)
+            ca_acc = self._collision_avoidance_planner.get_acceleration(self._pos, self._vel, self._other_pos)
 
             # get current time
             #self.time = rospy.get_time() - self.initial_time
@@ -218,7 +218,7 @@ class RotorSFollowerPlannerNode():
             #print self._waypoint
             #print numpy.linalg.norm(self._pos-self._waypoint)
             
-            if numpy.linalg.norm(self._pos-self._waypoint) < 0.3:
+            if numpy.linalg.norm(self._pos-self._waypoint) < 0.2:
                 print("\nNEW WAYPOINT!!!: " + str(waypoint_counter) + "\n")
                 print("\nTIME: " + str(rospy.get_time()) + "\n")
                 waypoint_counter += 1

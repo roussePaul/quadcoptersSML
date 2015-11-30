@@ -6,7 +6,7 @@
 *~
 #GitEye project file
 .project
-# rotors_simulator
 /rotors_simulator
 /mav_comm
 /mavros
+/multimaster_fkie

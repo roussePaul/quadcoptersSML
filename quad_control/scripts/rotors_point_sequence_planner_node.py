@@ -155,14 +155,14 @@ class RotorSPointSequencePlannerNode():
         #self.time = rospy.get_time() - initial_time
         
         # instantiate the publisher
-        topic = rospy.get_param('ref_traj_topic', default='/hummingbird/command/trajectory')
+        topic = rospy.get_param('ref_traj_topic', default='/hummingbird_leader/command/trajectory')
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
         # to get the pose of the quad
         self._pos = None
         self._vel = None
         self._got_initial_pos_vel_flag = False
-        topic = rospy.get_param('quad_pos_topic', default='/hummingbird/ground_truth/odometry')
+        topic = rospy.get_param('quad_pos_topic', default='/hummingbird_leader/ground_truth/odometry')
         rospy.Subscriber(topic, nm.Odometry, self._get_quad_pos_vel)
 
         # setting the frequency of execution
