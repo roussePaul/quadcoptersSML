@@ -8,8 +8,8 @@
 *~
 
 # GitEye project file
-.project
 .gitignore
+.project
 .gitmodules
 .gitattributes
 
