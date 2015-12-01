@@ -38,7 +38,7 @@ import tf.transformations as tft
 
 
 
-class RotorSFollowerPlannerNode():
+class RotorSCollisionAvoidancePointSequencePlannerNode():
 
     def __init__(self):
         pass
@@ -250,6 +250,6 @@ class RotorSFollowerPlannerNode():
 
 
 if __name__ == '__main__':
-    node = RotorSFollowerPlannerNode()
+    node = RotorSCollisionAvoidancePointSequencePlannerNode()
     node.work()
     

@@ -96,16 +96,16 @@ class RotorSPlannerNode():
         return numpy.array([x, y, z, yaw])
     
     
-    def _get_quad_initial_pose(self, msg):
+    def _get_quad_initial_pos(self, msg):
         """This is called only once to get the initial position of the quad, in
         case one wants to use it as the starting point for the reference
         trajectory.
         This callback kills the subcriber object herself at the end of the call.
         """
         
-        self._quad_initial_pose = self._pose_stamped_to_reference_position(msg)
+        self._quad_initial_pos = self._pose_stamped_to_reference_position(msg)
         self._sub.unregister()
-        self._got_quad_initial_pose_flag = True
+        self._got_quad_initial_pos_flag = True
     
 
     def work(self):
@@ -126,34 +126,35 @@ class RotorSPlannerNode():
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
         # to get the initial position of the quad
-        self._quad_initial_pose = None
-        self._got_quad_initial_pose_flag = False
-        topic = rospy.get_param('quad_pose_topic', default='ground_truth/pose')
-        self._sub = rospy.Subscriber(topic, gm.PoseStamped, self._get_quad_initial_pose)
+        self._quad_initial_pos = None
+        self._got_quad_initial_pos_flag = False
+        topic = rospy.get_param('quad_pos_topic', default='ground_truth/pose')
+        self._sub = rospy.Subscriber(topic, gm.PoseStamped, self._get_quad_initial_pos)
 
         # setting the frequency of execution
         rate = rospy.Rate(1e1)
 
         # get initial quad position
-        while not self._got_quad_initial_pose_flag:
+        while not self._got_quad_initial_pos_flag and not rospy.is_shutdown():
+            print("The planner is waiting for the quad initial position.")
             rate.sleep()
 
         # trajectory to be published
         #delay = rospy.get_param('delay', default=0.0)
-        #self.trajectory = qt.TrajectoryQuintic(self.quad_initial_pose, numpy.eye(3), delay, delay+duration, displacement)
-        #radius = 3.0
-        #ang_vel = 0.2
-        #start_point = numpy.array(self.quad_initial_pose)
-        #start_point[2] = 1.0
-        #duration = 10000.0
-        displacement = rospy.get_param('displacement', default=[1.0, 0.0, 1.0, 0.0])
-        duration = rospy.get_param('duration', default=3.0*numpy.linalg.norm(displacement))
+        #self.trajectory = qt.TrajectoryQuintic(self.quad_initial_pos, numpy.eye(3), delay, delay+duration, displacement)
+        radius = 3.0
+        ang_vel = 0.2
+        start_point = numpy.array(self._quad_initial_pos)
+        start_point[2] = 1.0
+        duration = 10000.0
+        #displacement = rospy.get_param('displacement', default=[1.0, 0.0, 1.0, 0.0])
+        #duration = rospy.get_param('duration', default=3.0*numpy.linalg.norm(displacement))
         delay = rospy.get_param('delay', default=5.0)
         time = rospy.get_time() - self._initial_time
-        #self.trajectory = ct.TrajectoryCircle(start_point, numpy.eye(3), time+delay, time+delay+duration, radius, ang_vel)
-        self._trajectory = qt.TrajectoryQuintic(self._quad_initial_pose, numpy.eye(3), time+delay, time+delay+duration, self._quad_initial_pose+displacement)
-        rospy.loginfo("Here!" + str(self._quad_initial_pose))
-        rospy.loginfo(self._quad_initial_pose+displacement)
+        self._trajectory = ct.TrajectoryCircle(start_point, numpy.eye(3), time+delay, time+delay+duration, radius, ang_vel)
+        #self._trajectory = qt.TrajectoryQuintic(self._quad_initial_pos, numpy.eye(3), time+delay, time+delay+duration, self._quad_initial_pos+displacement)
+        #rospy.loginfo("Here!" + str(self._quad_initial_pos))
+        #rospy.loginfo(self._quad_initial_pos+displacement)
 
         # do work
         while not rospy.is_shutdown():
@@ -162,7 +163,7 @@ class RotorSPlannerNode():
             #print(self.time)
             #print(self.initial_time)
             p, v, a, j, s, c = self._trajectory.get_point(self._time)
-            #print(p)
+            print(p)
             msg = self._trajectory_to_multi_dof_joint_trajectory(p, v, a, j, s, c)
             pub.publish(msg)
             rate.sleep()

@@ -8,6 +8,8 @@
   <rosparam file="$(find mav_startup)/parameters/capabilities.yaml"/>
 
   <group ns="$(arg namespace)" >
+    
+    <param name="other_pos_vel_topic" value="$(arg namespace_partner)"/>
   
     <!--node name="mav_interface" pkg="ethzasl_mav_interface" type="mav_interface_node"
       output="screen" respawn="true" clear_params="true">
@@ -136,9 +138,7 @@
       <param name="leader_pos_vel_topic" value="$(arg namespace_leader)"/>
     </node-->
     
-    <node name="antonio_collision_avoidance_point_sequence_planner" pkg="quad_control" type="bluebird_collision_avoidance_point_sequence_planner_node.py" output="screen">
-      <param name="other_pos_vel_topic" value="$(arg namespace_partner)"/>
-    </node>
+    <node name="antonio_collision_avoidance_point_sequence_planner" pkg="quad_control" type="bluebird_collision_avoidance_point_sequence_planner_node.py" output="screen"/>
     
   </group>
   

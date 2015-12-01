@@ -12,6 +12,7 @@
   </include>
 
   <group ns="hummingbird_1">
+    <param name="other_pos_topic" value="/hummingbird_2/ground_truth/odometry"/>
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
       <arg name="mav_name" value="hummingbird_1" />
       <arg name="model" value="$(find rotors_description)/urdf/hummingbird_generic_odometry_sensor.gazebo" />
@@ -33,6 +34,7 @@
   </group>
 
   <group ns="hummingbird_2">
+    <param name="other_pos_topic" value="/hummingbird_1/ground_truth/odometry"/>
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
       <arg name="mav_name" value="hummingbird_2" />
       <arg name="model" value="$(find rotors_description)/urdf/hummingbird_generic_odometry_sensor.gazebo" />

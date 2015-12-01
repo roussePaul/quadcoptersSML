@@ -121,8 +121,8 @@ class RotorSFollowerPlannerNode():
         
      
     def _get_leader_state(self, msg):
-        self.lead_pos, self.lead_vel, self.lead_acc, self.lead_jrk, self.lead_snp, self.lead_crk = self._odometry_to_reference_point(msg)
-        self.got_leader_state_flag = True
+        self._lead_pos, self._lead_vel, aux3, aux4, aux5 aux6 = self._odometry_to_reference_point(msg)
+        self._got_leader_pos_vel_flag = True
         
     
     def _get_quad_initial_pose(self, msg):
@@ -132,9 +132,9 @@ class RotorSFollowerPlannerNode():
         This callback kills the subcriber object herself at the end of the call.
         """
         
-        self.quad_initial_pose = self._pose_stamped_to_reference_position(msg)
-        self.follower_pose_subscriber.unregister()
-        self.got_quad_initial_pose_flag = True
+        self._quad_initial_pose = self._pose_stamped_to_reference_position(msg)
+        self._follower_pose_subscriber.unregister()
+        self._got_quad_initial_pos_flag = True
     
 
     def work(self):
@@ -147,32 +147,32 @@ class RotorSFollowerPlannerNode():
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
         # to get the initial position of the quad
-        self.quad_initial_pose = None
-        self.got_quad_initial_pose_flag = False
+        self._quad_initial_pose = None
+        self._got_quad_initial_pose_flag = False
         topic = rospy.get_param('follower_pose_topic', default='ground_truth/pose')
-        self.follower_pose_subscriber = rospy.Subscriber(topic, gm.PoseStamped, self._get_quad_initial_pose)
+        self._follower_pose_subscriber = rospy.Subscriber(topic, gm.PoseStamped, self._get_quad_initial_pose)
 
         # subscriber to the position of the leader
         topic = rospy.get_param('leader_state_topic', default='/hummingbird_leader/ground_truth/odometry')
-        self.got_leader_state_flag = False
-        self.leader_state_subscriber = rospy.Subscriber(topic, nm.Odometry, self._get_leader_state)
+        self._got_leader_state_flag = False
+        self._leader_state_subscriber = rospy.Subscriber(topic, nm.Odometry, self._get_leader_state)
 
         # setting the frequency of execution
         rate = rospy.Rate(1e1)
 
         # get initial quad position
-        while not self.got_leader_state_flag:
+        while not self._got_leader_pos_vel_flag and not rospy.is_shutdown():
             rate.sleep()
 
         # desired offset with respect to the leader
-        self.offset = numpy.array([1.0, 0.0, 0.0, 0.0])
-        #self.trajectory = ct.TrajectoryCircle(self.quad_initial_pose, numpy.eye(3), delay, delay+duration, radius, ang_vel)
+        self._offset = numpy.array([1.0, 0.0, 0.0, 0.0])
+        #self._trajectory = ct.TrajectoryCircle(self._quad_initial_pose, numpy.eye(3), delay, delay+duration, radius, ang_vel)
 
         # do work
         while not rospy.is_shutdown():
 
-            p = self.lead_pos + self.offset
-            v = self.lead_vel
+            p = self._lead_pos + self._offset
+            v = self._lead_vel
             a = numpy.zeros(4)
             j = numpy.zeros(4)
             sn = numpy.zeros(4)

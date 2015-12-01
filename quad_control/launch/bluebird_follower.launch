@@ -8,6 +8,8 @@
 
   <group ns="$(arg namespace)" >
   
+    <param name="leader_pos_vel_topic" value="$(arg namespace_leader)"/>
+  
     <!--node name="mav_interface" pkg="ethzasl_mav_interface" type="mav_interface_node"
       output="screen" respawn="true" clear_params="true">
       <param name="frame_id" value="fcu" />
@@ -131,9 +133,7 @@
     
     <!--node name="antonio_point_sequence_planner" pkg="quad_control" type="bluebird_point_sequence_planner_node.py" output="screen"/-->
     
-    <node name="antonio_follower_planner" pkg="quad_control" type="bluebird_follower_planner_node.py" output="screen">
-      <param name="leader_pos_vel_topic" value="$(arg namespace_leader)"/>
-    </node>
+    <node name="antonio_follower_planner" pkg="quad_control" type="bluebird_follower_planner_node.py" output="screen"/>
     
     <!--node name="antonio_collision_avoidance_point_sequence_planner" pkg="quad_control" type="bluebird_collision_avoidance_point_sequence_planner_node.py" output="screen">
       <param name="other_pos_vel_topic" value="$(arg namespace_partner)"/>
