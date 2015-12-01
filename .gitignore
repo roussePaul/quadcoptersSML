@@ -1,12 +1,25 @@
 # python byte code
 *.pyc
+
 # top level CMakeLists should be created with catkin_init_workspace
-#/CMakeLists.txt
+/CMakeLists.txt
+
 # gedit backup files
 *~
-#GitEye project file
+
+# GitEye project file
 .project
-/rotors_simulator
+.gitignore
+.gitmodules
+.gitattributes
+
+# ros-related files
+.rosinstall
+
+# folders that should not be uploaded
+/gui
 /mav_comm
 /mavros
+/mocap
 /multimaster_fkie
+/rotors_simulator
