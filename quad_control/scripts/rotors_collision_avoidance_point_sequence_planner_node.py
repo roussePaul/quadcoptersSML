@@ -123,7 +123,7 @@ class RotorSCollisionAvoidancePointSequencePlannerNode():
             #time = rospy.get_time() - self.initial_time
             #delay = rospy.get_param('delay', default=1.0)
             #self._roaming_planner = cbt.TrajectoryCubic(self._pos, numpy.eye(3), delay+time, delay+time+duration, self._waypoint)
-            self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 3.0)
+            self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 5.0)
         else:
             self._generate_waypoint()
 
@@ -143,7 +143,7 @@ class RotorSCollisionAvoidancePointSequencePlannerNode():
         #time = rospy.get_time() - self.initial_time
         #delay = rospy.get_param('delay', default=1.0)
         #self._roaming_planner = cbt.TrajectoryCubic(self._pos, numpy.eye(3), delay+time, delay+time+duration, self._waypoint)
-        self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 3.0)
+        self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 5.0)
 
 
 
@@ -153,8 +153,8 @@ class RotorSCollisionAvoidancePointSequencePlannerNode():
         rospy.init_node('rotors_collision_avoidance_point_sequence_planner_node')
         
         # planner to compute the collision avoidance contributions
-        gain = 5.0
-        ths = 3.0
+        gain = 4.0
+        ths = 6.0
         self._collision_avoidance_planner = pca.PlannerCollisionAvoidance(gain, ths)
         
         # planner to roam around
@@ -218,14 +218,17 @@ class RotorSCollisionAvoidancePointSequencePlannerNode():
             #print self._waypoint
             #print numpy.linalg.norm(self._pos-self._waypoint)
             
-            if numpy.linalg.norm(self._pos-self._waypoint) < 0.2:
-                print("\nNEW WAYPOINT!!!: " + str(waypoint_counter) + "\n")
-                print("\nTIME: " + str(rospy.get_time()) + "\n")
+            if numpy.linalg.norm(self._pos-self._waypoint) < 0.15:
+                #print("\nNEW WAYPOINT!!!: " + str(waypoint_counter) + "\n")
+                #print("\nTIME: " + str(rospy.get_time()) + "\n")
                 waypoint_counter += 1
                 self._generate_waypoint()
                 
-            print("DISTANCE: " + str(numpy.linalg.norm(self._pos-self._other_pos)))
-            print("TO GOAL: " + str(numpy.linalg.norm(self._pos-self._waypoint)))
+            #print("TO GOAL: " + str(numpy.linalg.norm(self._pos-self._waypoint)))
+            print("GOAL: " + str(self._waypoint))
+            print("CURRENT: " + str(self._pos))
+            print("TIME: " + str(rospy.get_time()))
+            print("WAYPOINTS REACHED: " + str(waypoint_counter))
                 
             r_acc = self._roaming_planner.get_acceleration(self._pos, self._vel)
 

@@ -132,7 +132,7 @@ class RotorSMultipleCollisionAvoidancePointSequencePlannerNode():
             #time = rospy.get_time() - self.initial_time
             #delay = rospy.get_param('delay', default=1.0)
             #self._roaming_planner = cbt.TrajectoryCubic(self._pos, numpy.eye(3), delay+time, delay+time+duration, self._waypoint)
-            self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 1.0)
+            self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 5.0)
         else:
             self._generate_waypoint()
 
@@ -151,7 +151,7 @@ class RotorSMultipleCollisionAvoidancePointSequencePlannerNode():
         #time = rospy.get_time() - self.initial_time
         #delay = rospy.get_param('delay', default=1.0)
         #self._roaming_planner = cbt.TrajectoryCubic(self._pos, numpy.eye(3), delay+time, delay+time+duration, self._waypoint)
-        self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 1.0)
+        self._roaming_planner = ptg.PlannerToGoal(self._waypoint, 1.0, 5.0)
 
 
 
@@ -161,7 +161,7 @@ class RotorSMultipleCollisionAvoidancePointSequencePlannerNode():
         rospy.init_node('rotors_multiple_collision_avoidance_point_sequence_planner_node')
         
         # planner to compute the collision avoidance contributions
-        gain = 1.0
+        gain = 2.0
         ths = 4.0
         self._collision_avoidance_planner = pcam.PlannerCollisionAvoidanceMultiple(gain, ths)
         
@@ -189,7 +189,7 @@ class RotorSMultipleCollisionAvoidancePointSequencePlannerNode():
             rospy.Subscriber("/" + quad_name + "/ground_truth/odometry", nm.Odometry, self._get_other_pos, quad_name)
 
         # setting the frequency of execution
-        freq = 1e1
+        freq = 30.0
         rate = rospy.Rate(freq)
 
         # get initial time

@@ -36,7 +36,7 @@ import tf.transformations as tft
 
 
 
-class BluebirdPlannerNode():
+class AscTecPlannerNode():
 
     def __init__(self):
         pass
@@ -113,7 +113,7 @@ class BluebirdPlannerNode():
     def work(self):
 
         # initialize node
-        rospy.init_node('rotors_planner_node')
+        rospy.init_node('asctec_planner_node')
         
         # get initial time
         #aux = rospy.get_time()
@@ -124,7 +124,7 @@ class BluebirdPlannerNode():
         #print(type(self._initial_time))
         
         # instantiate the publisher
-        topic = rospy.get_param('reference_trajectory_topic', default='command/trajectory')
+        topic = rospy.get_param('ref_traj_topic', default='command/trajectory')
         pub = rospy.Publisher(topic, tm.MultiDOFJointTrajectory, queue_size=10)
 
         # to get the initial position of the quad
@@ -134,7 +134,7 @@ class BluebirdPlannerNode():
         self._sub = rospy.Subscriber(topic, nm.Odometry, self._get_quad_initial_pos)
 
         # setting the frequency of execution
-        rate = rospy.Rate(1e1)
+        rate = rospy.Rate(1e2)
 
         # get initial quad position
         while not self._got_quad_initial_pos_flag and not rospy.is_shutdown():
@@ -144,12 +144,12 @@ class BluebirdPlannerNode():
         # trajectory to be published
         #delay = rospy.get_param('delay', default=0.0)
         #self._trajectory = qt.TrajectoryQuintic(self._quad_initial_pos, numpy.eye(3), delay, delay+duration, displacement)
-        radius = 2.0
+        radius = 1.0
         ang_vel = 0.2
         start_point = numpy.array(self._quad_initial_pos)
         start_point[2] = 1.0
         duration = 10000.0
-        displacement = rospy.get_param('displacement', default=[1.0, 0.0, 1.0, 0.0])
+        #displacement = rospy.get_param('displacement', default=[1.0, 0.0, 1.0, 0.0])
         duration = rospy.get_param('duration', default=3.0*numpy.linalg.norm(displacement))
         delay = rospy.get_param('delay', default=5.0)
         time = rospy.get_time() - self._initial_time
@@ -174,6 +174,6 @@ class BluebirdPlannerNode():
 
 
 if __name__ == '__main__':
-    node = BluebirdPlannerNode()
+    node = AscTecPlannerNode()
     node.work()
     

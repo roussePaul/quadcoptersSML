@@ -46,10 +46,10 @@ class PlannerCollisionAvoidance:
         d = numpy.linalg.norm(po-p)
         
         if d < s and quad_vel.dot(po-p)>0.0:
-            acc = -0.5*k*(po-p)/d*(1.0/d-1.0/s) 
+            acc = -k*(po-p)/d*(1.0/d-1.0/s) 
             aux = self._rotate_2d_array_by_pi_halves(acc[0:2])
-            acc[0:2] += 0.5*k*aux
-            acc[2] = 0.0
+            acc[0:2] += k*aux
+            #acc[2] = 0.0
             acc = self._saturate(acc, 1.0)
         else:
             acc = numpy.zeros(4)

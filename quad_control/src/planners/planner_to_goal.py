@@ -41,7 +41,7 @@ class PlannerToGoal:
         p = quad_pos
         
         v = quad_vel
-        v_des = self._saturate(kp*(ps-p), 0.5)
+        v_des = self._saturate(kp*(ps-p), 0.1)
 
         acc = kp*(ps-p) + kv*(v_des-v)
         #acc = kp*(ps-p) + kv*(0.0-v)
@@ -58,7 +58,7 @@ class PlannerToGoal:
         p = quad_pos
         
         vel = kp*(ps-p)
-        vel = self._saturate(vel, 0.5)
+        vel = self._saturate(vel, 2.0)
         
         return vel
         

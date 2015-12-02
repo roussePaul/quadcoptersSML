@@ -35,7 +35,7 @@ import tf.transformations as tft
 
 
 
-class BluebirdFollowerPlannerNode():
+class AscTecFollowerPlannerNode():
 
     def __init__(self):
         pass
@@ -122,7 +122,7 @@ class BluebirdFollowerPlannerNode():
     def work(self):
 
         # initialize node
-        rospy.init_node('rotors_follower_planner_node')
+        rospy.init_node('asctec_follower_planner_node')
         
         # instantiate the publisher
         topic = rospy.get_param('follower_reference_trajectory_topic', default='command/trajectory')
@@ -135,7 +135,8 @@ class BluebirdFollowerPlannerNode():
         self.follower_pose_subscriber = rospy.Subscriber(topic, nm.Odometry, self._get_quad_initial_pos)
 
         # subscriber to the position of the leader
-        topic = rospy.get_param('leader_pos_vel_topic', default='msf_core/odometry')
+        leader_name = rospy.get_param('leader_name', default='')
+        topic = leader_name + '/msf_core/odometry'
         self._got_leader_state_flag = False
         self._leader_state_subscriber = rospy.Subscriber(topic, nm.Odometry, self._get_leader_state)
 
@@ -148,8 +149,11 @@ class BluebirdFollowerPlannerNode():
             rate.sleep()
 
         # desired offset with respect to the leader
-        self.offset = numpy.array([1.0, 0.0, 0.0, 0.0])
-        #self.trajectory = ct.TrajectoryCircle(self.quad_initial_pose, numpy.eye(3), delay, delay+duration, radius, ang_vel)
+        #self._offset = numpy.array([1.0, 0.0, 0.0, 0.0])
+
+        # any 
+        self._offset = self._initial_pos - self._lead_pos
+        self._offset[2] = 0.0
 
         # do work
         while not rospy.is_shutdown():
@@ -169,6 +173,6 @@ class BluebirdFollowerPlannerNode():
 
 
 if __name__ == '__main__':
-    node = BluebirdFollowerPlannerNode()
+    node = AscTecFollowerPlannerNode()
     node.work()
     
