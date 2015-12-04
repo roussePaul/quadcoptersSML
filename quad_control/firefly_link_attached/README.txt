@@ -1,6 +1,10 @@
-Just copy these files to /catkin_ws/src/rotors_simulator/rotors_description/urdf. 
-If not renamed, however, they will replace the original ones.
-(But if you comment out lines 81-88 from the firefly.xacro file then the link will be removed from the quad).
+Copy the .xacro files to /catkin_ws/src/rotors_simulator/rotors_description/urdf. 
+Copy the "lee_position_controller_node.cpp" and "lee_position_controller_node.h" files to /catkin_ws/src/rotors_simulator/rotors_control/src/nodes
+Run a "catkin_make" command and then run the launchfile mav_hovering_example.launch.
+-- It's not perfect, but it's progress--
+
+If not renamed, however, the files will replace the original ones. No worries though, I have added comments to the lines I added/modified so it is easy to comment them out if desired.
+
 Note that the joint added (that connect the quad base to the link) is a revolute joint with respect to x-axis.
 To make it a ball joint (3 DoFs) I guess we can add 3 joints wrt the 3 axis and create really short links in between them.
 (I don't think there's a 3 DoF joint in gazebo.)
