@@ -149,12 +149,14 @@ class saver_mavrosPlugin(Plugin):
     def Set_Flight_Mode(self,MODE):
         
         #Change the flight mode on the Pixhawk flight controller
+
+        srv_name = self.namespace+'mavros/set_mode'
         try:
             # it waits for service for 2 seconds
-            rospy.wait_for_service(self.namespace+'mavros/set_mode',2.0)
+            rospy.wait_for_service(srv_name,2.0)
 
             try:
-                change_param = rospy.ServiceProxy(self.namespace+'mavros/set_mode',SetMode)
+                change_param = rospy.ServiceProxy(srv_name,SetMode)
                 param=change_param(0,MODE)
 
                 if param.success:
@@ -164,11 +166,11 @@ class saver_mavrosPlugin(Plugin):
                     rospy.logwarn('Could not change Flight mode')
                     # return False
             except:
-                rospy.logwarn('Mavros is not available')
+                rospy.logwarn(srv_name + ' does not respond')
                 # return False
 
         except:
-            rospy.logwarn('Mavros is not available')
+            rospy.logwarn(srv_name + ' is not available')
             # return False
 
     def Arming_Quad(self,base_name=""):
