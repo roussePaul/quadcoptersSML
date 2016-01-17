@@ -63,6 +63,7 @@ add_service_files(
   StartSim.srv
   TrajDes_Srv.srv
   Mocap_Id.srv
+  Mocap_Name.srv
   Controller_Srv.srv
   Simulator_Srv.srv
   MocapBodies.srv

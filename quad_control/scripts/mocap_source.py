@@ -5,6 +5,7 @@ import sys      #for exit
 import struct
 import math
 import time
+import xml.dom.minidom as minidom
 
 class Mocap(object):
 
@@ -125,6 +126,52 @@ class Mocap(object):
             print "There are no valid bodies in the workspace."
         return [valid,msg]
 
+    def ask_for_param(self):
+        str_to_send = 'GetParameters All'
+        msg = self._build_packet(str_to_send,1)
+        try:
+            self.socket.sendall(msg)
+            return True
+        except:
+            None
+
+    def get_parameters(self, printinfo=True):
+        if self.ask_for_param() == None:
+            return None
+        msg = _parser_comm(self.socket)
+        if msg == None:
+            return None
+        valid = []
+        #print msg['type']
+        if msg['type']=='No more data' or msg['type']=='Event':
+            return valid
+            # raise Exception('No more data available. Check if the QTM server is running.')
+        
+        return msg
+
+    def get_list_bodies(self):
+        xml_data = self.get_parameters()
+        xml_str = xml_data['message'][0:-1]
+
+        xml_dom = minidom.parseString(xml_str)
+        bb = xml_dom.getElementsByTagName("Body")
+
+        names = []
+        for b in bb:
+            alist=b.getElementsByTagName('Name')
+            for a in alist:
+                name = a.childNodes[0].nodeValue
+                names.append(name)
+
+        return names
+
+    def get_id_from_name(self,name):
+        names = self.get_list_bodies()
+        try:
+            return names.index(name)+1
+        except ValueError:
+            raise NameError(name + " is not defined in Qualisys, not in "+str(names))
+
     def get_updated_bodies(self):
         try:
             [valid_bodies,bodies_info] = self.find_available_bodies(printinfo=False)
@@ -213,6 +260,15 @@ class Body(object):
         dof['id']=self.bodynr
         return dof
 
+def recv_basic(socket,size):
+    total_data=[]
+    s = 0
+    while s<size:
+        data = socket.recv(size-s)
+        if not data: break
+        total_data.append(data)
+        s += len(data)
+    return ''.join(total_data)
 
 def _parser_comm(socket):
     msg = {'size':None, 'type':None, 'message':None, 'bodies':None, 'timestamp':None}
@@ -266,7 +322,9 @@ def _parser_comm(socket):
             msg['bodies']=bodies
             msg['timestamp']=timestamp
     elif msg_type_code!=4:
-        qtm_message_bytes = socket.recv(msg_size-8) #receive the message (size+type are 8B)
+
+        qtm_message_bytes = recv_basic(socket,msg_size-8) #receive the message (size+type are 8B)
+
         qtm_message = qtm_message_bytes.decode("UTF-8")
         msg['message']=qtm_message
     return msg

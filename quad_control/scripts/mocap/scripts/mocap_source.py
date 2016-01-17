@@ -8,7 +8,7 @@ import time
 
 class Mocap(object):
 
-    def __init__(self, host=None, port=None, info=0):
+    def __init__(self, host=None, port=None, info=1):
         #set IP and PORT of the Qtm PC
         if host is None:
             #host='130.237.50.87'

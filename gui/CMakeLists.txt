@@ -7,6 +7,7 @@ project(gui)
 find_package(catkin REQUIRED COMPONENTS
   rospy
   rqt_gui_py
+  quad_control
 )
 
 ## System dependencies are found with CMake's conventions
@@ -93,6 +94,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+
   ${catkin_INCLUDE_DIRS}
 )
 

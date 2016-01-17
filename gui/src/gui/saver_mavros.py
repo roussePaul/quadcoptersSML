@@ -107,6 +107,8 @@ class saver_mavrosPlugin(Plugin):
         self._widget.ModeSTABILIZE.toggled.connect(self.ChangeMode)
         self._widget.ModeACRO.toggled.connect(self.ChangeMode)
 
+        self._widget.groupInfo.setText("Namespace: "+str(namespace))
+
 
     def MinThrottle(self):
         #Change the flight mode on the Pixhawk flight controller

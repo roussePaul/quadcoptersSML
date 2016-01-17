@@ -2,13 +2,13 @@
     <group ns="Iris1">
 
 
-	<node pkg="quad_control" name="rc_control" type="rc_control.py" output="screen"/>
+	<node pkg="quad_control" name="rc_control" type="rc_control.py" args="/dev/ttyUSB0" output="screen"/>
 
 
 	<!-- from iris1_mavros.launch: -->
 
 	<!-- Controller Node -->
-    <node pkg="quad_control" name="controller_Iris1" type="cycle_quad_control_mavros.py"/>
+    <node pkg="quad_control" name="controller_Iris1" type="cycle_quad_control_mavros.py" output="screen"/>
 
     <!-- Controller parameters -->
     <param name="gravity_ctr" value="9.81"/>

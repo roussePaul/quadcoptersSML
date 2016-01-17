@@ -9,6 +9,7 @@ import time
 import serial
 import serial.tools
 import array
+import sys
 
 # Add some mora advanced safety features:
 class serialRC:
@@ -75,8 +76,9 @@ class serialRC:
 		self.cmd=True
 		self.cmd_chan[2] = 1000
 		self.cmd_chan[3] = 2000
+		print self.cmd_chan
 		self.sendRC()
-		rospy.sleep(2.0)
+		rospy.sleep(3.0)
 		self.cmd_chan[2] = 1000
 		self.cmd_chan[3] = 1500
 		self.sendRC()
@@ -87,7 +89,7 @@ class serialRC:
 		self.cmd_chan[2] = 1000
 		self.cmd_chan[3] = 1000
 		self.sendRC()
-		rospy.sleep(2.0)
+		rospy.sleep(3.0)
 		self.cmd_chan[2] = 1000
 		self.cmd_chan[3] = 1500
 		self.sendRC()
@@ -103,7 +105,9 @@ class serialRC:
 def rosRC():
 	rospy.init_node('chan2serial', anonymous=True)
 	
-	ser = serialRC("/dev/ttyUSB0")
+	port = sys.argv[1]
+	print "RC connect to " + port
+	ser = serialRC(port)
 
 	rospy.Service('mavros/set_mode', SetMode, ser.set_mode)
 	rospy.Service('mavros/cmd/arming', CommandBool, ser.cmd_arm)

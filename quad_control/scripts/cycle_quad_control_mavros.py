@@ -95,10 +95,10 @@ class quad_controller():
 
         # initialize counter for publishing to GUI
         # we only publish when self.PublishToGUI =1
-        self.PublishToGUI = 1
+        self.PublishToGUICount = 1
         # Frequency of publishing to GUI (Hz)
-        frequency_PubToGui = 10
-        # we reset counter when self.PublishToGUI >= PublishToGUIBound
+        frequency_PubToGui = self.frequency
+        # we reset counter when self.PublishToGUICount >= PublishToGUIBound
         self.PublishToGUIBound = int(self.frequency/frequency_PubToGui)
 
         # intiialization should be done in another way,
@@ -111,7 +111,6 @@ class quad_controller():
 
 
     def GET_STATE_(self):
-
         # if simulator is on, state is updated by subscription
         # if mocap is on, state comes from mocap
         if self.flagMOCAP == True:
@@ -119,7 +118,6 @@ class quad_controller():
             self.flag_measurements = 1
 
             bodies = self.Qs.get_body(self.body_id)
-
             if bodies != 'off':  
 
                 self.flag_measurements = 1
@@ -403,7 +401,7 @@ class quad_controller():
             # if Mocap is turned off, and we are requested to turn it on
             if req.On == True:
                 # establish connection to qualisys
-                self.Qs = mocap_source.Mocap(info=0)
+                self.Qs = mocap_source.Mocap(info=1)
 
                 # stop subscription to data from simulator
                 # unsubscribe to topic
@@ -413,6 +411,28 @@ class quad_controller():
 
                 # service was provided
                 return Mocap_IdResponse(False,True)
+
+
+    #callback for turning ON/OFF Mocap and turning OFF/ON the subscription to the simulator
+    def handle_Mocap_Body(self,req):
+
+        if hasattr(self,'Qs') and self.Qs != None:
+
+            return Mocap_NameResponse("OK",True)
+        # establish connection to qualisys
+        self.Qs = mocap_source.Mocap(info=1)
+
+        # stop subscription to data from simulator
+        # unsubscribe to topic
+        self.SubToSim.unregister()
+
+        idb = self.Qs.get_id_from_name(req.name)
+
+
+        self.body_id = idb
+        self.flagMOCAP_On = True
+        self.flagMOCAP = True
+        return Mocap_NameResponse("OK",True)
 
     # return list of bodies detected by mocap or numbers 1 to 99 if not available
     def handle_available_bodies(self, dummy):
@@ -431,12 +451,12 @@ class quad_controller():
 
         # WE ONLY PUBLIS TO TO GUI AT A CERTAIN FREQEUNCY
         # WHICH IS NOT NECESSARILY THE FREQUENCY OF THE NODE
-        if self.PublishToGUI <= self.PublishToGUIBound:
+        if self.PublishToGUICount <= self.PublishToGUIBound:
             # if we dont publish, we increase counter
-            self.PublishToGUI = self.PublishToGUI + 1
+            self.PublishToGUICount = self.PublishToGUICount + 1
         else:
             # if we publish, we increase counter
-            self.PublishToGUI = 1
+            self.PublishToGUICount = 1
 
             # create a message of type quad_state_and_cmd
             st_cmd = quad_state_and_cmd()
@@ -551,6 +571,7 @@ class quad_controller():
         self.flagMOCAP_On = False
         # Service is created, so that Mocap is turned ON or OFF whenever we want
         Save_MOCAP_service = rospy.Service('Mocap_Set_Id', Mocap_Id, self.handle_Mocap)
+        rospy.Service('Mocap_Set_Name', Mocap_Name, self.handle_Mocap_Body)
 
 
         # Service for providing list of available mocap bodies to GUI

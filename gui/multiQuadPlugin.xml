@@ -1,0 +1,16 @@
+<library path="src">
+  <class name="My Multiple Quad GUI Plugin" type="gui.multiQuadGui.multiQuadGuiPlugin" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      A multi quad GUI with the functionality of GUI-plugins developed earlier
+    </description>
+    <qtgui>
+      <group>
+        <label>Iris</label>
+        <icon type="theme">folder</icon>
+      </group>
+      <label>Multi Quad GUI plugin</label>
+      <icon type="theme">applications-science</icon>
+      <statustip></statustip>
+    </qtgui>
+  </class>
+</library>
